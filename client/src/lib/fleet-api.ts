@@ -48,6 +48,18 @@ export type Approval = {
   approvedBy?: string;
 };
 
+export type DashboardRole = "data_scientist" | "medical_director" | "payer_operations";
+
+export type OperatorProfile = {
+  employeeId: number | string;
+  name: string;
+  role: DashboardRole;
+  roleLabel: string;
+  department: string;
+  initials: string;
+  source: "server" | "demo";
+};
+
 export type FleetSnapshot = {
   runtime: {
     mode: RuntimeMode;
@@ -65,6 +77,16 @@ export type FleetSnapshot = {
 
 const now = new Date();
 const iso = (minutesAgo: number) => new Date(now.getTime() - minutesAgo * 60000).toISOString();
+
+export const demoProfile: OperatorProfile = {
+  employeeId: "demo-hk-chun",
+  name: "Dr. HK Chun",
+  role: "data_scientist",
+  roleLabel: "Data Scientist",
+  department: "Clinical analytics",
+  initials: "HK",
+  source: "demo",
+};
 
 export const demoSnapshot: FleetSnapshot = {
   runtime: {
@@ -107,6 +129,26 @@ async function request<T>(baseUrl: string, token: string, path: string, options?
   });
   if (!response.ok) throw new Error(`${response.status}: ${await response.text()}`);
   return response.json() as Promise<T>;
+}
+
+export async function loadOperatorProfile(baseUrl: string, token: string): Promise<OperatorProfile> {
+  if (!baseUrl) return demoProfile;
+  try {
+    const profile = await request<{ employee_id: number | string; name: string; role: string; role_label?: string; department?: string; initials?: string; dashboard_role?: string }>(baseUrl, token, "/fleet/profile");
+    const rawRole = profile.dashboard_role || profile.role;
+    const role: DashboardRole = rawRole === "medical_director" || rawRole === "payer_operations" ? rawRole : "data_scientist";
+    return {
+      employeeId: profile.employee_id,
+      name: profile.name,
+      role,
+      roleLabel: profile.role_label || ({ data_scientist: "Data Scientist", medical_director: "Medical Director", payer_operations: "Payer Operations" }[role]),
+      department: profile.department || profile.role_label || "Operations",
+      initials: profile.initials || profile.name.split(/\\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase(),
+      source: "server",
+    };
+  } catch {
+    return demoProfile;
+  }
 }
 
 export async function loadFleetSnapshot(baseUrl: string, token: string): Promise<FleetSnapshot> {

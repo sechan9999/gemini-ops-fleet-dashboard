@@ -1,6 +1,8 @@
 # Task list
 
-- [x] Replace the sidebar operator name with Dr. HK Chun.
-- [x] Replace the operator role with Data Scientist.
-- [x] Update the avatar initials to HK.
-- [x] Verify the sidebar rendering and production build.
+- [x] Define the server-backed operator profile response and role permission matrix.
+- [x] Add a live FastAPI API adapter using VITE_FLEET_API_URL and VITE_FLEET_TOKEN.
+- [x] Add GET /fleet/profile to the FastAPI governance API.
+- [x] Load the operator profile dynamically in the sidebar.
+- [x] Implement role-specific tabs, metrics, approval actions, and data scope.
+- [x] Verify demo fallback, live API behavior, permission boundaries, and production build.
