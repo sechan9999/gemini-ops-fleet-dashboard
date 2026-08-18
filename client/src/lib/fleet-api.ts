@@ -47,6 +47,8 @@ export type Approval = {
   payload: Record<string, string>;
   priority?: "high" | "medium" | "low";
   approvedBy?: string;
+  rejectedBy?: string;
+  rejectionReason?: string;
   aiSummary?: string;
 };
 
@@ -169,6 +171,8 @@ function normalizeApproval(raw: any): Approval {
     payload: raw.payload || { draft },
     priority: raw.priority || "high",
     approvedBy: raw.approved_by,
+    rejectedBy: raw.rejected_by,
+    rejectionReason: raw.rejection_reason,
   };
 }
 
@@ -197,9 +201,9 @@ export async function sendDraft(baseUrl: string, token: string, approvalId: stri
   await request(baseUrl, token, `/fleet/approvals/${approvalId}/send`, { method: "POST" });
 }
 
-export async function rejectDraft(baseUrl: string, token: string, approvalId: string): Promise<void> {
+export async function rejectDraft(baseUrl: string, token: string, approvalId: string, reason: string): Promise<void> {
   if (!baseUrl) return;
-  await request(baseUrl, token, `/fleet/approvals/${approvalId}/reject`, { method: "POST" });
+  await request(baseUrl, token, `/fleet/approvals/${approvalId}/reject`, { method: "POST", body: JSON.stringify({ reason }) });
 }
 
 export async function generateApprovalSummary(baseUrl: string, token: string, approvalId: string): Promise<string> {

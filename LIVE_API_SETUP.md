@@ -13,7 +13,7 @@ The dashboard calls the following endpoints:
 | `GET /fleet/audit` | Loads audit and refusal telemetry. |
 | `POST /fleet/approvals/{id}/summary` | Generates a short Gemini explanation from the server-authorized synthetic draft. |
 | `POST /fleet/approvals/{id}/approve` | Records a human approval. |
-| `POST /fleet/approvals/{id}/reject` | Records a human rejection and removes the request from the active pending queue. |
+| `POST /fleet/approvals/{id}/reject` | Requires `{ "reason": "..." }`, records a human rejection, persists the reason, creates an audit row, and removes the request from the active pending queue. |
 | `POST /fleet/approvals/{id}/send` | Sends only after approval; pending or rejected requests must return HTTP 409. |
 | `POST /fleet/events/drain` | Requests a local/demo outbox drain. |
 
@@ -31,4 +31,4 @@ The backend profile endpoint maps existing Fleet roles into dashboard roles with
 
 For a production healthcare deployment, replace this demonstration mapping with an explicit organization-level role/permission policy in the backend. The browser should continue receiving permissions from the server-derived profile rather than accepting a role selector.
 
-The rejection fields are added non-destructively during database initialization for existing deployments. Confirm the migration in staging before production rollout and back up the approval table before deploying the schema change.
+The rejection fields and reason are added non-destructively during database initialization for existing deployments. Confirm the migration in staging before production rollout and back up the approval table before deploying the schema change. The frontend detail drawer displays the complete server-authorized clinical payload and Gemini summary, while the approval queue CSV export includes only the currently filtered and sorted rows.
