@@ -8,7 +8,8 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { sdk } from "./sdk";
-import { heartbeatNotificationStreams, openNotificationStream } from "../notifications";
+import { getNotificationStreamMetrics, heartbeatNotificationStreams, openNotificationStream } from "../notifications";
+import { getFleetEventBridgeMetrics, ingestFleetEvents, isFleetEventTokenValid } from "../fleet-event-bridge";
 import { serveStatic, setupVite } from "./vite";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -38,6 +39,8 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  const heartbeat = setInterval(() => heartbeatNotificationStreams(), 25_000);
+  heartbeat.unref?.();
   app.get("/api/notifications/stream", async (req, res) => {
     const user = await sdk.authenticateRequest(req).catch(() => null);
     if (!user) { res.status(401).end(); return; }
@@ -46,8 +49,22 @@ async function startServer() {
     res.setHeader("Connection", "keep-alive");
     res.flushHeaders();
     const cleanup = openNotificationStream(user.id, res);
-    const heartbeat = setInterval(() => heartbeatNotificationStreams(), 25_000);
-    req.on("close", () => { clearInterval(heartbeat); cleanup(); });
+    req.on("close", cleanup);
+  });
+  app.get("/api/notifications/metrics", async (req, res) => {
+    const user = await sdk.authenticateRequest(req).catch(() => null);
+    if (!user) { res.status(401).end(); return; }
+    if (user.role !== "admin") { res.status(403).end(); return; }
+    res.json({ stream: getNotificationStreamMetrics(), fleetBridge: getFleetEventBridgeMetrics() });
+  });
+  app.post("/api/notifications/fleet-events", async (req, res) => {
+    if (!isFleetEventTokenValid(req.header("X-Fleet-Event-Token"))) { res.status(401).end(); return; }
+    try {
+      const results = await ingestFleetEvents(req.body);
+      res.status(202).json({ accepted: results.length, results });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Invalid fleet event" });
+    }
   });
   // tRPC API
   app.use(

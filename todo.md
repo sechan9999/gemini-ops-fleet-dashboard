@@ -53,3 +53,9 @@
 - [x] Save and deliver the realtime notification checkpoint.
 - [x] Add focused SSE registry delivery and user-isolation test coverage.
 - [x] Verify unauthenticated `/api/notifications/stream` requests return HTTP 401 in the running staging server.
+- [x] Add the authenticated FastAPI-to-dashboard role-change event bridge and durable SSE publication contract.
+- [x] Add browser-level Playwright coverage for authenticated SSE delivery and toast rendering; credentialed execution remains pending.
+- [x] Add protected operational metrics for stream connections, delivery latency, dropped clients, and bridge ingestion.
+- [x] Prepare the corrected Gemini Ops Fleet README as a downloadable file.
+- [ ] Configure `FLEET_EVENT_INGEST_TOKEN` and run the production publisher against staging.
+- [ ] Execute the authenticated Playwright test with `E2E_SESSION_COOKIE` against staging.

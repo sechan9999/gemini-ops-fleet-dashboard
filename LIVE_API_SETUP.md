@@ -38,3 +38,29 @@ The rejection fields and reason are added non-destructively during database init
 The full-stack deployment exposes `GET /api/notifications/stream` as an authenticated Server-Sent Events endpoint. The dashboard opens this stream with the session cookie and listens for `notification` events; the server emits heartbeat events to keep the connection alive. Persistent inbox records are available through `fleet.notifications`, with `fleet.markNotificationsRead` for read state. User preferences are available through `fleet.notificationPreferences` and `fleet.updateNotificationPreferences`.
 
 Before an administrator commits a bulk role change, the dashboard calls `admin.bulkDryRun` with the selected user IDs and proposed role, department, and initials. The response identifies changed and unchanged users. Only the explicit confirmation action calls `admin.bulkUpdateProfiles`, so unchanged users do not produce audit rows or notifications.
+
+
+## Production FastAPI event publisher bridge
+
+The dashboard accepts authenticated role or department events from the production FastAPI fleet publisher at `POST /api/notifications/fleet-events`. The publisher must send the shared `FLEET_EVENT_INGEST_TOKEN` in `X-Fleet-Event-Token`. The bridge accepts a single event, an `{ "events": [...] }` envelope, or a FastAPI `{ "activities": [...] }` envelope. A role-change event should include `event_id` or `id`, `user_id` or `operator_id`, `event_type`, `role`, `department`, and optional `actor` and `name` fields. Duplicate event IDs are ignored, non-role events are acknowledged but not persisted, and valid events create a durable inbox notification that is immediately fanned out through SSE.
+
+Example payload:
+
+```json
+{
+  "event_id": "role-change-2048",
+  "event_type": "operator.role_changed",
+  "user_id": 42,
+  "name": "Operator 42",
+  "actor": "Platform Admin",
+  "previous_role": "data_scientist",
+  "role": "medical_director",
+  "previous_department": "Clinical analytics",
+  "department": "Clinical governance",
+  "timestamp": "2026-08-18T21:30:00Z"
+}
+```
+
+The protected `GET /api/notifications/metrics` endpoint returns in-memory process metrics for active and total SSE connections, delivered notifications, dropped clients, delivery latency, bridge receipts, duplicates, ignored events, and failed publications. It is restricted to authenticated administrators. These counters are operational process metrics and should be scraped or forwarded to the organization’s monitoring system for long-term retention.
+
+The browser-level coverage is in `browser-tests/notifications.spec.ts`. Run it with `E2E_BASE_URL` and an authenticated `E2E_SESSION_COOKIE`; it intercepts the SSE stream in Chromium and verifies that the notification toast renders the event title and message.

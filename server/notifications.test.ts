@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { openNotificationStream, publishNotification } from "./notifications";
+import { getNotificationStreamMetrics, openNotificationStream, publishNotification } from "./notifications";
 
 describe("notification SSE registry", () => {
   it("delivers notifications only to the matching operator stream", () => {
@@ -14,7 +14,17 @@ describe("notification SSE registry", () => {
 
     expect(matchingWrites.some((value) => value.includes("event: notification") && value.includes("Dashboard access updated"))).toBe(true);
     expect(otherWrites.some((value) => value.includes("Dashboard access updated"))).toBe(false);
+    const beforeClose = getNotificationStreamMetrics();
+    expect(beforeClose.activeConnections).toBeGreaterThanOrEqual(2);
+    expect(beforeClose.deliveredNotifications).toBeGreaterThanOrEqual(1);
     closeMatching();
     closeOther();
+    expect(getNotificationStreamMetrics().activeConnections).toBe(0);
+  });
+
+  it("counts notifications without subscribers as dropped clients", () => {
+    const before = getNotificationStreamMetrics().droppedClients;
+    publishNotification({ id: 12, userId: 999, kind: "role_change", title: "No subscriber", message: "Dropped test event.", readAt: null, createdAt: new Date() });
+    expect(getNotificationStreamMetrics().droppedClients).toBe(before + 1);
   });
 });
