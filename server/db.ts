@@ -1,6 +1,6 @@
-import { desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { approvalRequests, auditEntries, InsertApprovalRequest, InsertAuditEntry, InsertOperatorProfile, InsertUser, operatorProfiles, users } from "../drizzle/schema";
+import { approvalRequests, auditEntries, fleetAgents, fleetEvents, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, operatorProfiles, runtimeTelemetry, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -112,6 +112,19 @@ export async function listApprovalRequests() {
   return db.select().from(approvalRequests).orderBy(desc(approvalRequests.createdAt));
 }
 
+export async function listApprovalRequestsPage(page: number, pageSize: number, state?: string, priority?: string, query?: string, sort: "newest" | "oldest" | "priority" = "newest") {
+  await ensureFleetSeeded();
+  const db = await getDb();
+  if (!db) return { rows: [], total: 0 };
+  const filters = [state ? eq(approvalRequests.state, state as "pending" | "approved" | "rejected" | "sent") : undefined, priority ? eq(approvalRequests.priority, priority as "high" | "medium" | "low") : undefined, query?.trim() ? or(like(approvalRequests.id, `%${query.trim()}%`), like(approvalRequests.subject, `%${query.trim()}%`), like(approvalRequests.summary, `%${query.trim()}%`), like(approvalRequests.agent, `%${query.trim()}%`), like(approvalRequests.domain, `%${query.trim()}%`)) : undefined].filter(Boolean) as Array<ReturnType<typeof eq>>;
+  const where = filters.length ? and(...filters) : undefined;
+  const [rows, totals] = await Promise.all([
+    db.select().from(approvalRequests).where(where).orderBy(sort === "oldest" ? asc(approvalRequests.createdAt) : sort === "priority" ? sql`FIELD(${approvalRequests.priority}, 'high', 'medium', 'low'), ${approvalRequests.createdAt} DESC` : desc(approvalRequests.createdAt)).limit(pageSize).offset((page - 1) * pageSize),
+    db.select({ total: count() }).from(approvalRequests).where(where),
+  ]);
+  return { rows, total: Number(totals[0]?.total || 0) };
+}
+
 export async function getApprovalRequest(id: string) {
   const db = await getDb();
   if (!db) return undefined;
@@ -158,4 +171,41 @@ export async function upsertOperatorProfile(input: InsertOperatorProfile) {
   if (!db) return undefined;
   await db.insert(operatorProfiles).values(input).onDuplicateKeyUpdate({ set: { dashboardRole: input.dashboardRole, department: input.department, initials: input.initials } });
   return getOperatorProfile(input.userId);
+}
+
+export async function listOperatorProfiles() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ profile: operatorProfiles, user: { id: users.id, name: users.name, email: users.email, openId: users.openId } }).from(operatorProfiles).leftJoin(users, eq(operatorProfiles.userId, users.id)).orderBy(desc(operatorProfiles.updatedAt));
+}
+
+export async function seedTelemetry() {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db.select({ id: fleetAgents.id }).from(fleetAgents).limit(1);
+  if (existing.length) return;
+  await db.insert(runtimeTelemetry).values({ id: "runtime-001", mode: "cloud", model: "gemini-3.5-flash", database: "Managed MySQL / Drizzle", guardrail: "Model Armor", pubsub: "OIDC push connected", trace: "Cloud Trace · OTel" });
+  await db.insert(fleetAgents).values([
+    { id: "payer-intelligence", name: "Payer Intelligence", domain: "Payer operations", version: "0.4.2", autonomy: "drafts_only", capabilities: ["Policy RAG", "Denial analysis", "Coverage verification"], restrictions: ["No direct dispatch", "Payer scope only", "Human approval required"], health: "healthy" },
+    { id: "clinical-quality", name: "Clinical & Quality", domain: "Clinical operations", version: "0.3.8", autonomy: "drafts_only", capabilities: ["Guideline RAG", "Care-gap evaluation", "Quality initiatives"], restrictions: ["No patient outreach", "Clinical scope only", "Human approval required"], health: "healthy" },
+    { id: "triage", name: "Triage Agent", domain: "Operations", version: "1.1.0", autonomy: "autonomous", capabilities: ["Ticket classification", "Owner assignment"], restrictions: ["No external messaging"], health: "healthy" },
+    { id: "reconcile", name: "Reconcile Agent", domain: "Accounting", version: "1.0.6", autonomy: "read_only", capabilities: ["Ledger comparison", "Variance report"], restrictions: ["Read-only records", "Accounting scope only"], health: "standby" },
+  ]);
+  await db.insert(fleetEvents).values([
+    { id: "evt-2048", kind: "denial.received", actor: "pubsub", routedTo: "Payer Intelligence", status: "completed", detail: "Synthetic denial CLM-9921 routed for policy analysis." },
+    { id: "evt-2047", kind: "care_gap.detected", actor: "pubsub", routedTo: "Clinical & Quality", status: "completed", detail: "HEDIS-HbA1c cohort evaluation completed." },
+    { id: "evt-2046", kind: "document.search", actor: "claims-specialist", routedTo: "Payer Intelligence", status: "blocked", detail: "Cross-domain contract-rate retrieval returned an empty permitted set." },
+  ]);
+}
+
+export async function listTelemetry() {
+  await seedTelemetry();
+  const db = await getDb();
+  if (!db) return { runtime: [], agents: [], events: [] };
+  const [runtime, agents, events] = await Promise.all([
+    db.select().from(runtimeTelemetry).orderBy(desc(runtimeTelemetry.capturedAt)).limit(1),
+    db.select().from(fleetAgents).orderBy(fleetAgents.name),
+    db.select().from(fleetEvents).orderBy(desc(fleetEvents.occurredAt)).limit(50),
+  ]);
+  return { runtime, agents, events };
 }

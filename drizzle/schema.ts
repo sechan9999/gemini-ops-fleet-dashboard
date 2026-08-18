@@ -1,4 +1,4 @@
-import { boolean, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { index, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -52,7 +52,11 @@ export const approvalRequests = mysqlTable("approvalRequests", {
   rejectionReason: text("rejectionReason"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  stateCreatedAtIdx: index("approvalRequests_state_createdAt_idx").on(table.state, table.createdAt),
+  priorityCreatedAtIdx: index("approvalRequests_priority_createdAt_idx").on(table.priority, table.createdAt),
+  domainIdx: index("approvalRequests_domain_idx").on(table.domain),
+}));
 
 export const auditEntries = mysqlTable("auditEntries", {
   id: int("id").autoincrement().primaryKey(),
@@ -71,3 +75,43 @@ export type AuditEntry = typeof auditEntries.$inferSelect;
 export type InsertOperatorProfile = typeof operatorProfiles.$inferInsert;
 export type InsertApprovalRequest = typeof approvalRequests.$inferInsert;
 export type InsertAuditEntry = typeof auditEntries.$inferInsert;
+
+export const runtimeTelemetry = mysqlTable("runtimeTelemetry", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  mode: varchar("mode", { length: 40 }).notNull(),
+  model: varchar("model", { length: 120 }).notNull(),
+  database: varchar("database", { length: 120 }).notNull(),
+  guardrail: varchar("guardrail", { length: 120 }).notNull(),
+  pubsub: varchar("pubsub", { length: 120 }).notNull(),
+  trace: varchar("trace", { length: 120 }).notNull(),
+  capturedAt: timestamp("capturedAt").defaultNow().notNull(),
+}, (table) => ({ capturedAtIdx: index("runtimeTelemetry_capturedAt_idx").on(table.capturedAt) }));
+
+export const fleetAgents = mysqlTable("fleetAgents", {
+  id: varchar("id", { length: 80 }).primaryKey(),
+  name: varchar("name", { length: 160 }).notNull(),
+  domain: varchar("domain", { length: 160 }).notNull(),
+  version: varchar("version", { length: 40 }).notNull(),
+  autonomy: varchar("autonomy", { length: 40 }).notNull(),
+  capabilities: json("capabilities").notNull(),
+  restrictions: json("restrictions").notNull(),
+  health: varchar("health", { length: 40 }).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({ domainIdx: index("fleetAgents_domain_idx").on(table.domain), healthIdx: index("fleetAgents_health_idx").on(table.health) }));
+
+export const fleetEvents = mysqlTable("fleetEvents", {
+  id: varchar("id", { length: 80 }).primaryKey(),
+  kind: varchar("kind", { length: 120 }).notNull(),
+  actor: varchar("actor", { length: 160 }).notNull(),
+  routedTo: varchar("routedTo", { length: 160 }).notNull(),
+  status: varchar("status", { length: 40 }).notNull(),
+  detail: text("detail").notNull(),
+  occurredAt: timestamp("occurredAt").defaultNow().notNull(),
+}, (table) => ({ occurredAtIdx: index("fleetEvents_occurredAt_idx").on(table.occurredAt), statusIdx: index("fleetEvents_status_idx").on(table.status) }));
+
+export type RuntimeTelemetry = typeof runtimeTelemetry.$inferSelect;
+export type FleetAgentRecord = typeof fleetAgents.$inferSelect;
+export type FleetEventRecord = typeof fleetEvents.$inferSelect;
+export type InsertRuntimeTelemetry = typeof runtimeTelemetry.$inferInsert;
+export type InsertFleetAgent = typeof fleetAgents.$inferInsert;
+export type InsertFleetEvent = typeof fleetEvents.$inferInsert;

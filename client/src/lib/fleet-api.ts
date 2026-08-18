@@ -62,6 +62,7 @@ export type OperatorProfile = {
   department: string;
   initials: string;
   source: "server" | "demo";
+  isAdmin?: boolean;
 };
 
 export type FleetSnapshot = {
