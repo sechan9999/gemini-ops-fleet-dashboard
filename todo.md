@@ -71,3 +71,5 @@
 - [x] Write Devpost-ready project Description Markdown for direct copy/paste.
 - [x] Create and validate the major Gemini Ops Fleet architecture diagram.
 - [x] Render and validate the revised video and submission package.
+- [x] Diagnose and fix the tRPC query receiving HTML instead of JSON at `/?from_webdev=1`.
+- [x] Validate the repaired API route with tests, build, and browser/network checks.
