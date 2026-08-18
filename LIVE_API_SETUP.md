@@ -11,8 +11,10 @@ The dashboard calls the following endpoints:
 | `GET /fleet/approvals` | Loads approval requests visible to the authenticated operator. |
 | `GET /fleet/events` | Loads the asynchronous event stream. |
 | `GET /fleet/audit` | Loads audit and refusal telemetry. |
+| `POST /fleet/approvals/{id}/summary` | Generates a short Gemini explanation from the server-authorized synthetic draft. |
 | `POST /fleet/approvals/{id}/approve` | Records a human approval. |
-| `POST /fleet/approvals/{id}/send` | Sends only after approval; pending requests must return HTTP 409. |
+| `POST /fleet/approvals/{id}/reject` | Records a human rejection and removes the request from the active pending queue. |
+| `POST /fleet/approvals/{id}/send` | Sends only after approval; pending or rejected requests must return HTTP 409. |
 | `POST /fleet/events/drain` | Requests a local/demo outbox drain. |
 
 When the API URL is absent or unavailable, the dashboard falls back to clearly structured synthetic demo data. The sidebar marks whether the operator profile came from the server or demo mode, and live mode must never be inferred from a successful page load alone.
@@ -28,3 +30,5 @@ The backend profile endpoint maps existing Fleet roles into dashboard roles with
 | `sales` or `support` | `data_scientist` | Overview, registry, events, and scoped audit; no approval or send authority. |
 
 For a production healthcare deployment, replace this demonstration mapping with an explicit organization-level role/permission policy in the backend. The browser should continue receiving permissions from the server-derived profile rather than accepting a role selector.
+
+The rejection fields are added non-destructively during database initialization for existing deployments. Confirm the migration in staging before production rollout and back up the approval table before deploying the schema change.

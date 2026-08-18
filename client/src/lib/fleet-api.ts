@@ -29,7 +29,7 @@ export type AuditEntry = {
   actor: string;
   role: string;
   tool: string;
-  outcome: "allowed" | "denied" | "blocked" | "approved" | "sent";
+  outcome: "allowed" | "denied" | "blocked" | "approved" | "rejected" | "sent";
   detail: string;
   timestamp: string;
 };
@@ -45,7 +45,9 @@ export type Approval = {
   createdAt: string;
   evidence: string[];
   payload: Record<string, string>;
+  priority?: "high" | "medium" | "low";
   approvedBy?: string;
+  aiSummary?: string;
 };
 
 export type DashboardRole = "data_scientist" | "medical_director" | "payer_operations";
@@ -151,6 +153,25 @@ export async function loadOperatorProfile(baseUrl: string, token: string): Promi
   }
 }
 
+function normalizeApproval(raw: any): Approval {
+  const state: ApprovalState = raw.sent ? "sent" : raw.rejected ? "rejected" : raw.approved ? "approved" : "pending";
+  const draft = String(raw.draft || raw.summary || "Approval request");
+  return {
+    id: String(raw.id),
+    actionType: raw.action_type || "CLINICAL_REVIEW",
+    agent: raw.agent || "Payer Intelligence",
+    domain: raw.domain || "Payer operations",
+    subject: raw.subject || `Synthetic subject #${raw.customer_id ?? raw.id}`,
+    summary: raw.summary || draft.slice(0, 120),
+    state,
+    createdAt: raw.created_at || new Date().toISOString(),
+    evidence: raw.evidence || ["Server approval record", "Synthetic clinical payload"],
+    payload: raw.payload || { draft },
+    priority: raw.priority || "high",
+    approvedBy: raw.approved_by,
+  };
+}
+
 export async function loadFleetSnapshot(baseUrl: string, token: string): Promise<FleetSnapshot> {
   if (!baseUrl) return demoSnapshot;
   try {
@@ -160,7 +181,7 @@ export async function loadFleetSnapshot(baseUrl: string, token: string): Promise
       request<{ events: FleetEvent[] }>(baseUrl, token, "/fleet/events?limit=50"),
       request<{ entries: AuditEntry[] }>(baseUrl, token, "/fleet/audit?limit=50"),
     ]);
-    return { runtime: demoSnapshot.runtime, agents: registry.agents, approvals: approvals.approvals, events: events.events, audit: audit.entries };
+    return { runtime: demoSnapshot.runtime, agents: registry.agents, approvals: approvals.approvals.map(normalizeApproval), events: events.events, audit: audit.entries };
   } catch {
     return demoSnapshot;
   }
@@ -174,6 +195,17 @@ export async function approveDraft(baseUrl: string, token: string, approvalId: s
 export async function sendDraft(baseUrl: string, token: string, approvalId: string): Promise<void> {
   if (!baseUrl) return;
   await request(baseUrl, token, `/fleet/approvals/${approvalId}/send`, { method: "POST" });
+}
+
+export async function rejectDraft(baseUrl: string, token: string, approvalId: string): Promise<void> {
+  if (!baseUrl) return;
+  await request(baseUrl, token, `/fleet/approvals/${approvalId}/reject`, { method: "POST" });
+}
+
+export async function generateApprovalSummary(baseUrl: string, token: string, approvalId: string): Promise<string> {
+  if (!baseUrl) return "Synthetic clinical request: review the evidence and operational impact before taking a human action.";
+  const response = await request<{ summary: string }>(baseUrl, token, `/fleet/approvals/${approvalId}/summary`, { method: "POST" });
+  return response.summary;
 }
 
 export async function drainEvents(baseUrl: string, token: string): Promise<void> {

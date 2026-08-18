@@ -1,8 +1,8 @@
 # Task list
 
-- [x] Define the server-backed operator profile response and role permission matrix.
-- [x] Add a live FastAPI API adapter using VITE_FLEET_API_URL and VITE_FLEET_TOKEN.
-- [x] Add GET /fleet/profile to the FastAPI governance API.
-- [x] Load the operator profile dynamically in the sidebar.
-- [x] Implement role-specific tabs, metrics, approval actions, and data scope.
-- [x] Verify demo fallback, live API behavior, permission boundaries, and production build.
+- [x] Review Gemini model integration guidance and current approval API behavior.
+- [x] Add a server-side Gemini clinical summary endpoint with safe scoped input.
+- [x] Add typed frontend summary loading and card-level summary display.
+- [x] Add approve/reject loading states and success/error notifications.
+- [x] Add approval queue filtering and sorting by status, priority, and date.
+- [x] Verify role boundaries, live/demo fallback, build, and responsive rendering.
