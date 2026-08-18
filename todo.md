@@ -59,3 +59,6 @@
 - [x] Prepare the corrected Gemini Ops Fleet README as a downloadable file.
 - [x] Configure `FLEET_EVENT_INGEST_TOKEN` and run the production publisher against staging. Deferred by user; credential-dependent staging execution intentionally dropped from scope.
 - [x] Execute the authenticated Playwright test with `E2E_SESSION_COOKIE` against staging. Deferred by user; credential-dependent staging execution intentionally dropped from scope.
+- [x] Add a Prometheus-compatible endpoint for SSE and fleet bridge operational metrics.
+- [x] Add a protected frontend operational metrics view for live connections and delivery latency.
+- [x] Test, document, and checkpoint the Prometheus metrics feature.

@@ -10,6 +10,7 @@ import { createContext } from "./context";
 import { sdk } from "./sdk";
 import { getNotificationStreamMetrics, heartbeatNotificationStreams, openNotificationStream } from "../notifications";
 import { getFleetEventBridgeMetrics, ingestFleetEvents, isFleetEventTokenValid } from "../fleet-event-bridge";
+import { renderPrometheusMetrics } from "../prometheus";
 import { serveStatic, setupVite } from "./vite";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -50,6 +51,15 @@ async function startServer() {
     res.flushHeaders();
     const cleanup = openNotificationStream(user.id, res);
     req.on("close", cleanup);
+  });
+  app.get("/metrics", async (req, res) => {
+    const prometheusToken = process.env.PROMETHEUS_METRICS_TOKEN;
+    const tokenAuthorized = Boolean(prometheusToken && req.header("X-Prometheus-Token") === prometheusToken);
+    const user = tokenAuthorized ? null : await sdk.authenticateRequest(req).catch(() => null);
+    if (!tokenAuthorized && user?.role !== "admin") { res.status(401).end(); return; }
+    res.setHeader("Content-Type", "text/plain; version=0.0.4; charset=utf-8");
+    res.setHeader("Cache-Control", "no-store");
+    res.send(renderPrometheusMetrics());
   });
   app.get("/api/notifications/metrics", async (req, res) => {
     const user = await sdk.authenticateRequest(req).catch(() => null);

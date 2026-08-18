@@ -64,3 +64,10 @@ Example payload:
 The protected `GET /api/notifications/metrics` endpoint returns in-memory process metrics for active and total SSE connections, delivered notifications, dropped clients, delivery latency, bridge receipts, duplicates, ignored events, and failed publications. It is restricted to authenticated administrators. These counters are operational process metrics and should be scraped or forwarded to the organization’s monitoring system for long-term retention.
 
 The browser-level coverage is in `browser-tests/notifications.spec.ts`. Run it with `E2E_BASE_URL` and an authenticated `E2E_SESSION_COOKIE`; it intercepts the SSE stream in Chromium and verifies that the notification toast renders the event title and message.
+
+
+## Prometheus metrics and operational view
+
+The dashboard exposes `GET /metrics` in Prometheus text exposition format. Prometheus scrapers should send `X-Prometheus-Token` when `PROMETHEUS_METRICS_TOKEN` is configured. Without that token, the endpoint accepts an authenticated admin session; unauthenticated and non-admin requests are rejected. The endpoint contains only process-level operational counters and gauges, including `gemini_ops_sse_active_connections`, `gemini_ops_sse_delivery_latency_ms`, `gemini_ops_sse_delivery_latency_max_ms`, `gemini_ops_sse_notifications_delivered_total`, `gemini_ops_sse_dropped_clients_total`, and the `gemini_ops_fleet_events_*` bridge counters.
+
+Administrators can inspect the same protected JSON data through `admin.streamMetrics` in the Operator admin view. The Notification stream health panel refreshes every five seconds, shows active connections, latest and peak delivery latency, delivered notifications, dropped clients, and bridge receipt/publication/duplicate/ignored counts. The panel is intentionally restricted to the server-authorized admin surface rather than exposing internal operational telemetry to ordinary operators.

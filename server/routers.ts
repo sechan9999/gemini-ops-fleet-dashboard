@@ -5,6 +5,8 @@ import { invokeLLM } from "./_core/llm";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { addAuditEntry, createOperatorNotification, ensureFleetSeeded, getApprovalRequest, getNotificationPreferences, getOperatorProfile, getUserById, listApprovalRequests, listApprovalRequestsPage, listAuditEntries, listOperatorNotifications, listOperatorProfiles, listRoleChanges, listTelemetry, markOperatorNotificationsRead, recordRoleChange, updateApprovalRequest, upsertNotificationPreferences, upsertOperatorProfile } from "./db";
+import { getFleetEventBridgeMetrics } from "./fleet-event-bridge";
+import { getNotificationStreamMetrics } from "./notifications";
 
 const dashboardRole = z.enum(["data_scientist", "medical_director", "payer_operations"]);
 const actionInput = z.object({ id: z.string().min(1), action: z.enum(["approve", "reject", "send"]), reason: z.string().optional() });
@@ -78,6 +80,7 @@ export const appRouter = router({
   }),
   admin: router({
     profiles: adminProcedure.query(async () => (await listOperatorProfiles()).map(normalizedProfile)),
+    streamMetrics: adminProcedure.query(() => ({ stream: getNotificationStreamMetrics(), fleetBridge: getFleetEventBridgeMetrics() })),
     roleChanges: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(50).default(10), query: z.string().optional(), newRole: dashboardRole.optional(), from: z.string().optional(), to: z.string().optional() }).optional()).query(async ({ input }) => { const result = await listRoleChanges(input || {}); return { rows: result.rows.map((entry) => ({ id: entry.id, targetUserId: entry.targetUserId, actorUserId: entry.actorUserId, actorName: entry.actorName, targetName: entry.targetName, previousRole: entry.previousRole, newRole: entry.newRole, previousDepartment: entry.previousDepartment || "", newDepartment: entry.newDepartment || "", createdAt: entry.createdAt.toISOString() })), total: result.total, page: input?.page || 1, pageSize: input?.pageSize || 10 }; }),
     bulkDryRun: adminProcedure.input(z.object({ userIds: z.array(z.number().int().positive()).min(1).max(100), dashboardRole, department: z.string().max(120), initials: z.string().max(8) })).query(async ({ input }) => { const profiles = await listOperatorProfiles(); const selected = profiles.filter((item) => input.userIds.includes(item.profile.userId)).map((item) => ({ userId: item.profile.userId, name: item.user?.name || `User ${item.profile.userId}`, currentRole: item.profile.dashboardRole, currentDepartment: item.profile.department || "", nextRole: input.dashboardRole, nextDepartment: input.department, changed: item.profile.dashboardRole !== input.dashboardRole || (item.profile.department || "") !== input.department })); return { rows: selected, changedCount: selected.filter((item) => item.changed).length, unchangedCount: selected.filter((item) => !item.changed).length }; }),
     updateProfile: adminProcedure.input(z.object({ userId: z.number().int().positive(), dashboardRole, department: z.string().max(120), initials: z.string().max(8) })).mutation(async ({ ctx, input }) => {
