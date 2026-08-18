@@ -62,3 +62,7 @@
 - [x] Add a Prometheus-compatible endpoint for SSE and fleet bridge operational metrics.
 - [x] Add a protected frontend operational metrics view for live connections and delivery latency.
 - [x] Test, document, and checkpoint the Prometheus metrics feature.
+- [x] Persist operational metric snapshots for connection and latency trend analysis.
+- [x] Add time-range filtering to the protected stream metrics contract.
+- [x] Add responsive connection and latency trend charts to the admin dashboard.
+- [x] Add threshold-based color-coded status indicators and verify the trend analytics feature.

@@ -71,3 +71,10 @@ The browser-level coverage is in `browser-tests/notifications.spec.ts`. Run it w
 The dashboard exposes `GET /metrics` in Prometheus text exposition format. Prometheus scrapers should send `X-Prometheus-Token` when `PROMETHEUS_METRICS_TOKEN` is configured. Without that token, the endpoint accepts an authenticated admin session; unauthenticated and non-admin requests are rejected. The endpoint contains only process-level operational counters and gauges, including `gemini_ops_sse_active_connections`, `gemini_ops_sse_delivery_latency_ms`, `gemini_ops_sse_delivery_latency_max_ms`, `gemini_ops_sse_notifications_delivered_total`, `gemini_ops_sse_dropped_clients_total`, and the `gemini_ops_fleet_events_*` bridge counters.
 
 Administrators can inspect the same protected JSON data through `admin.streamMetrics` in the Operator admin view. The Notification stream health panel refreshes every five seconds, shows active connections, latest and peak delivery latency, delivered notifications, dropped clients, and bridge receipt/publication/duplicate/ignored counts. The panel is intentionally restricted to the server-authorized admin surface rather than exposing internal operational telemetry to ordinary operators.
+
+
+## Stream trend analytics
+
+The protected `admin.streamMetrics` procedure accepts `1h`, `6h`, `24h`, or `7d` and returns the current operational counters plus durable `history` points from `operationalMetricSnapshots`. A current sample is captured when an administrator requests the metrics view, allowing the existing five-second admin refresh to build a durable trend without an in-process server timer. The additive migration `0005_free_pixie.sql` creates the snapshot table and captured-time index.
+
+The admin panel renders separate connection and delivery-latency line charts. Latency uses a 500 ms watch threshold and a 1,000 ms critical threshold; dropped clients are healthy at zero, watch when one through four are present, and critical at five or more. The status chips, metric card tones, latency reference lines, and chart stroke all use the same threshold interpretation.

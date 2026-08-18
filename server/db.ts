@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, gte, lte, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { adminRoleChanges, approvalRequests, auditEntries, fleetAgents, fleetEvents, InsertAdminRoleChange, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertNotificationPreferences, InsertOperatorNotification, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, notificationPreferences, operatorNotifications, operatorProfiles, runtimeTelemetry, users } from "../drizzle/schema";
+import { adminRoleChanges, approvalRequests, auditEntries, fleetAgents, fleetEvents, InsertAdminRoleChange, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertNotificationPreferences, InsertOperatorNotification, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, notificationPreferences, operatorNotifications, operatorProfiles, operationalMetricSnapshots, runtimeTelemetry, users } from "../drizzle/schema";
 import { publishNotification } from "./notifications";
 import { ENV } from './_core/env';
 
@@ -281,4 +281,27 @@ export async function listTelemetry() {
     db.select().from(fleetEvents).orderBy(desc(fleetEvents.occurredAt)).limit(50),
   ]);
   return { runtime, agents, events };
+}
+
+export async function recordOperationalMetricSnapshot(input: {
+  activeConnections: number;
+  deliveryLatencyMs: number;
+  maxDeliveryLatencyMs: number;
+  deliveredNotifications: number;
+  totalNotifications: number;
+  droppedClients: number;
+  bridgeReceived: number;
+  bridgePublished: number;
+  bridgeFailed: number;
+}) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const inserted = await db.insert(operationalMetricSnapshots).values(input).$returningId();
+  return inserted[0]?.id;
+}
+
+export async function listOperationalMetricSnapshots(since: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(operationalMetricSnapshots).where(gte(operationalMetricSnapshots.capturedAt, since)).orderBy(asc(operationalMetricSnapshots.capturedAt));
 }

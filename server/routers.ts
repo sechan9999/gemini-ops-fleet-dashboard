@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addAuditEntry, createOperatorNotification, ensureFleetSeeded, getApprovalRequest, getNotificationPreferences, getOperatorProfile, getUserById, listApprovalRequests, listApprovalRequestsPage, listAuditEntries, listOperatorNotifications, listOperatorProfiles, listRoleChanges, listTelemetry, markOperatorNotificationsRead, recordRoleChange, updateApprovalRequest, upsertNotificationPreferences, upsertOperatorProfile } from "./db";
+import { addAuditEntry, createOperatorNotification, ensureFleetSeeded, getApprovalRequest, getNotificationPreferences, getOperatorProfile, getUserById, listApprovalRequests, listApprovalRequestsPage, listAuditEntries, listOperatorNotifications, listOperatorProfiles, listRoleChanges, listTelemetry, listOperationalMetricSnapshots, markOperatorNotificationsRead, recordOperationalMetricSnapshot, recordRoleChange, updateApprovalRequest, upsertNotificationPreferences, upsertOperatorProfile } from "./db";
 import { getFleetEventBridgeMetrics } from "./fleet-event-bridge";
 import { getNotificationStreamMetrics } from "./notifications";
 
@@ -80,7 +80,15 @@ export const appRouter = router({
   }),
   admin: router({
     profiles: adminProcedure.query(async () => (await listOperatorProfiles()).map(normalizedProfile)),
-    streamMetrics: adminProcedure.query(() => ({ stream: getNotificationStreamMetrics(), fleetBridge: getFleetEventBridgeMetrics() })),
+    streamMetrics: adminProcedure.input(z.object({ range: z.enum(["1h", "6h", "24h", "7d"]).default("24h") }).optional()).query(async ({ input }) => {
+      const range = input?.range || "24h";
+      const durationMs = range === "1h" ? 60 * 60 * 1000 : range === "6h" ? 6 * 60 * 60 * 1000 : range === "7d" ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+      const stream = getNotificationStreamMetrics();
+      const fleetBridge = getFleetEventBridgeMetrics();
+      await recordOperationalMetricSnapshot({ activeConnections: stream.activeConnections, deliveryLatencyMs: stream.deliveryLatencyMs, maxDeliveryLatencyMs: stream.maxDeliveryLatencyMs, deliveredNotifications: stream.deliveredNotifications, totalNotifications: stream.totalNotifications, droppedClients: stream.droppedClients, bridgeReceived: fleetBridge.received, bridgePublished: fleetBridge.published, bridgeFailed: fleetBridge.failed });
+      const history = await listOperationalMetricSnapshots(new Date(Date.now() - durationMs));
+      return { range, stream, fleetBridge, history: history.map((point) => ({ capturedAt: point.capturedAt.toISOString(), activeConnections: point.activeConnections, deliveryLatencyMs: point.deliveryLatencyMs, maxDeliveryLatencyMs: point.maxDeliveryLatencyMs, deliveredNotifications: point.deliveredNotifications, totalNotifications: point.totalNotifications, droppedClients: point.droppedClients, bridgeReceived: point.bridgeReceived, bridgePublished: point.bridgePublished, bridgeFailed: point.bridgeFailed })) };
+    }),
     roleChanges: adminProcedure.input(z.object({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(50).default(10), query: z.string().optional(), newRole: dashboardRole.optional(), from: z.string().optional(), to: z.string().optional() }).optional()).query(async ({ input }) => { const result = await listRoleChanges(input || {}); return { rows: result.rows.map((entry) => ({ id: entry.id, targetUserId: entry.targetUserId, actorUserId: entry.actorUserId, actorName: entry.actorName, targetName: entry.targetName, previousRole: entry.previousRole, newRole: entry.newRole, previousDepartment: entry.previousDepartment || "", newDepartment: entry.newDepartment || "", createdAt: entry.createdAt.toISOString() })), total: result.total, page: input?.page || 1, pageSize: input?.pageSize || 10 }; }),
     bulkDryRun: adminProcedure.input(z.object({ userIds: z.array(z.number().int().positive()).min(1).max(100), dashboardRole, department: z.string().max(120), initials: z.string().max(8) })).query(async ({ input }) => { const profiles = await listOperatorProfiles(); const selected = profiles.filter((item) => input.userIds.includes(item.profile.userId)).map((item) => ({ userId: item.profile.userId, name: item.user?.name || `User ${item.profile.userId}`, currentRole: item.profile.dashboardRole, currentDepartment: item.profile.department || "", nextRole: input.dashboardRole, nextDepartment: input.department, changed: item.profile.dashboardRole !== input.dashboardRole || (item.profile.department || "") !== input.department })); return { rows: selected, changedCount: selected.filter((item) => item.changed).length, unchangedCount: selected.filter((item) => !item.changed).length }; }),
     updateProfile: adminProcedure.input(z.object({ userId: z.number().int().positive(), dashboardRole, department: z.string().max(120), initials: z.string().max(8) })).mutation(async ({ ctx, input }) => {

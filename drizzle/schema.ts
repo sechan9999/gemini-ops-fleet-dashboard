@@ -164,3 +164,22 @@ export const notificationPreferences = mysqlTable("notificationPreferences", {
 
 export type NotificationPreferences = typeof notificationPreferences.$inferSelect;
 export type InsertNotificationPreferences = typeof notificationPreferences.$inferInsert;
+
+export const operationalMetricSnapshots = mysqlTable("operationalMetricSnapshots", {
+  id: int("id").autoincrement().primaryKey(),
+  capturedAt: timestamp("capturedAt").defaultNow().notNull(),
+  activeConnections: int("activeConnections").notNull().default(0),
+  deliveryLatencyMs: int("deliveryLatencyMs").notNull().default(0),
+  maxDeliveryLatencyMs: int("maxDeliveryLatencyMs").notNull().default(0),
+  deliveredNotifications: int("deliveredNotifications").notNull().default(0),
+  totalNotifications: int("totalNotifications").notNull().default(0),
+  droppedClients: int("droppedClients").notNull().default(0),
+  bridgeReceived: int("bridgeReceived").notNull().default(0),
+  bridgePublished: int("bridgePublished").notNull().default(0),
+  bridgeFailed: int("bridgeFailed").notNull().default(0),
+}, (table) => ({
+  capturedAtIdx: index("operationalMetricSnapshots_capturedAt_idx").on(table.capturedAt),
+}));
+
+export type OperationalMetricSnapshot = typeof operationalMetricSnapshots.$inferSelect;
+export type InsertOperationalMetricSnapshot = typeof operationalMetricSnapshots.$inferInsert;
