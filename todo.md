@@ -57,5 +57,5 @@
 - [x] Add browser-level Playwright coverage for authenticated SSE delivery and toast rendering; credentialed execution remains pending.
 - [x] Add protected operational metrics for stream connections, delivery latency, dropped clients, and bridge ingestion.
 - [x] Prepare the corrected Gemini Ops Fleet README as a downloadable file.
-- [ ] Configure `FLEET_EVENT_INGEST_TOKEN` and run the production publisher against staging.
-- [ ] Execute the authenticated Playwright test with `E2E_SESSION_COOKIE` against staging.
+- [x] Configure `FLEET_EVENT_INGEST_TOKEN` and run the production publisher against staging. Deferred by user; credential-dependent staging execution intentionally dropped from scope.
+- [x] Execute the authenticated Playwright test with `E2E_SESSION_COOKIE` against staging. Deferred by user; credential-dependent staging execution intentionally dropped from scope.
