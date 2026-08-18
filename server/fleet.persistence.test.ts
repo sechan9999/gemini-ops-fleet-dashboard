@@ -61,8 +61,12 @@ describe("fleet persistence", () => {
     await admin.admin.bulkUpdateProfiles({ userIds: [2, 3], dashboardRole: "data_scientist", department: "Clinical analytics", initials: "OP" });
     const updated = await admin.admin.bulkUpdateProfiles({ userIds: [2, 3], dashboardRole: "payer_operations", department: "Payer operations", initials: "PO" });
     expect(updated).toHaveLength(2);
-    const changes = await admin.admin.roleChanges({ limit: 20 });
-    expect(changes.some((entry) => entry.newRole === "payer_operations" && entry.actorName === "Platform Admin")).toBe(true);
+    const changes = await admin.admin.roleChanges({ page: 1, pageSize: 20, newRole: "payer_operations" });
+    expect(changes.rows.some((entry) => entry.newRole === "payer_operations" && entry.actorName === "Platform Admin")).toBe(true);
+    expect(changes.total).toBeGreaterThan(0);
+    const affectedOperator = appRouter.createCaller(context(2, "User 2"));
+    const notifications = await affectedOperator.fleet.notifications();
+    expect(notifications.some((item) => item.kind === "role_change" && item.title === "Dashboard access updated")).toBe(true);
     await admin.admin.bulkUpdateProfiles({ userIds: [2, 3], dashboardRole: "data_scientist", department: "Clinical analytics", initials: "OP" });
   });
 

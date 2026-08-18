@@ -22,6 +22,13 @@
       "when": 1787081520479,
       "tag": "0002_previous_hiroim",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1787085686456,
+      "tag": "0003_lying_big_bertha",
+      "breakpoints": true
     }
   ]
 }

@@ -167,3 +167,19 @@
 .admin-audit-row:last-child { border-bottom: 0; }
 .audit-timeline-mark { display: grid; place-items: center; flex: 0 0 auto; width: 29px; height: 29px; color: var(--teal); background: var(--teal-soft); border-radius: 8px; }
 @media (max-width: 900px) { .admin-chart-grid { grid-template-columns: 1fr; } .admin-bulk-toolbar { align-items: stretch; flex-direction: column; } .admin-bulk-fields { justify-content: flex-start; } }
+
+.confirm-dialog { width: min(720px, calc(100vw - 32px)); max-height: min(760px, calc(100vh - 48px)); overflow-y: auto; padding: 24px; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 24px 80px rgba(27, 38, 35, .22); }
+.confirm-table { overflow: hidden; margin-top: 22px; border: 1px solid var(--line); border-radius: 12px; }
+.confirm-head, .confirm-row { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(160px, 1fr) minmax(160px, 1fr); gap: 16px; align-items: center; padding: 13px 14px; }
+.confirm-head { color: #8a9590; background: #f3f5f0; font: 10px/1.2 'IBM Plex Mono', monospace; letter-spacing: .12em; text-transform: uppercase; }
+.confirm-row { border-top: 1px solid var(--line); color: #687572; font-size: 12px; }
+.confirm-row strong { color: var(--ink); }
+.confirm-after { color: var(--teal); font-weight: 600; }
+.audit-filter-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; padding: 0 0 16px; }
+.audit-filter-toolbar > .admin-input { min-width: 220px; flex: 1 1 220px; }
+.date-filter { display: grid; gap: 5px; color: #8a9590; font: 10px/1.2 'IBM Plex Mono', monospace; letter-spacing: .08em; text-transform: uppercase; }
+.date-filter input { height: 38px; padding: 0 10px; color: var(--ink); background: #fbfcf9; border: 1px solid var(--line); border-radius: 8px; font: 12px 'IBM Plex Mono', monospace; }
+.pagination-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 15px; border-top: 1px solid var(--line); }
+.notification-button { position: relative; }
+.notification-dot { position: absolute; top: 7px; right: 7px; width: 6px; height: 6px; background: var(--coral); border: 1px solid var(--paper); border-radius: 50%; }
+@media (max-width: 720px) { .confirm-head, .confirm-row { grid-template-columns: 1fr; gap: 6px; } .confirm-row { padding: 14px; } .confirm-head { display: none; } .audit-filter-toolbar > .admin-input { min-width: 100%; } .date-filter { flex: 1 1 130px; } .pagination-bar { align-items: flex-start; flex-direction: column; } }

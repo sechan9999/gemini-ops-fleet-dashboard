@@ -135,3 +135,19 @@ export const adminRoleChanges = mysqlTable("adminRoleChanges", {
 
 export type AdminRoleChange = typeof adminRoleChanges.$inferSelect;
 export type InsertAdminRoleChange = typeof adminRoleChanges.$inferInsert;
+
+export const operatorNotifications = mysqlTable("operatorNotifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  kind: varchar("kind", { length: 40 }).notNull().default("role_change"),
+  title: varchar("title", { length: 180 }).notNull(),
+  message: text("message").notNull(),
+  readAt: timestamp("readAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userCreatedAtIdx: index("operatorNotifications_user_createdAt_idx").on(table.userId, table.createdAt),
+  userReadAtIdx: index("operatorNotifications_user_readAt_idx").on(table.userId, table.readAt),
+}));
+
+export type OperatorNotification = typeof operatorNotifications.$inferSelect;
+export type InsertOperatorNotification = typeof operatorNotifications.$inferInsert;

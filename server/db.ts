@@ -1,6 +1,6 @@
-import { and, asc, count, desc, eq, like, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, lte, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { adminRoleChanges, approvalRequests, auditEntries, fleetAgents, fleetEvents, InsertAdminRoleChange, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, operatorProfiles, runtimeTelemetry, users } from "../drizzle/schema";
+import { adminRoleChanges, approvalRequests, auditEntries, fleetAgents, fleetEvents, InsertAdminRoleChange, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertOperatorNotification, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, operatorNotifications, operatorProfiles, runtimeTelemetry, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -187,10 +187,43 @@ export async function recordRoleChange(input: InsertAdminRoleChange) {
   return rows[0];
 }
 
-export async function listRoleChanges(limit = 100) {
+export async function listRoleChanges(input: { page?: number; pageSize?: number; query?: string; newRole?: string; from?: string; to?: string } = {}) {
+  const db = await getDb();
+  if (!db) return { rows: [], total: 0 };
+  const page = input.page || 1;
+  const pageSize = input.pageSize || 20;
+  const query = input.query?.trim();
+  const filters = [
+    query ? or(like(adminRoleChanges.targetName, `%${query}%`), like(adminRoleChanges.actorName, `%${query}%`), like(adminRoleChanges.newDepartment, `%${query}%`)) : undefined,
+    input.newRole ? eq(adminRoleChanges.newRole, input.newRole) : undefined,
+    input.from ? gte(adminRoleChanges.createdAt, new Date(`${input.from}T00:00:00.000Z`)) : undefined,
+    input.to ? lte(adminRoleChanges.createdAt, new Date(`${input.to}T23:59:59.999Z`)) : undefined,
+  ].filter(Boolean) as Array<ReturnType<typeof eq>>;
+  const where = filters.length ? and(...filters) : undefined;
+  const [rows, totals] = await Promise.all([
+    db.select().from(adminRoleChanges).where(where).orderBy(desc(adminRoleChanges.createdAt)).limit(pageSize).offset((page - 1) * pageSize),
+    db.select({ total: count() }).from(adminRoleChanges).where(where),
+  ]);
+  return { rows, total: Number(totals[0]?.total || 0) };
+}
+
+export async function createOperatorNotification(input: InsertOperatorNotification) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.insert(operatorNotifications).values(input).$returningId();
+  return rows[0];
+}
+
+export async function listOperatorNotifications(userId: number, limit = 20) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(adminRoleChanges).orderBy(desc(adminRoleChanges.createdAt)).limit(limit);
+  return db.select().from(operatorNotifications).where(eq(operatorNotifications.userId, userId)).orderBy(desc(operatorNotifications.createdAt)).limit(limit);
+}
+
+export async function markOperatorNotificationsRead(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(operatorNotifications).set({ readAt: new Date() }).where(and(eq(operatorNotifications.userId, userId), sql`${operatorNotifications.readAt} IS NULL`));
 }
 
 export async function listOperatorProfiles() {

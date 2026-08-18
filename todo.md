@@ -30,3 +30,11 @@
 - [x] Add a direct admin-view entry point for staging verification.
 - [x] Visually verify charts, bulk selection, and role-change audit history in the admin view.
 - [x] Save and deliver a fresh checkpoint containing the latest admin UI changes.
+
+- [x] Define bulk-edit confirmation preview and protected commit contract.
+- [x] Add role-change audit filtering and date-range pagination contracts.
+- [x] Persist operator role/department notifications and expose protected read procedures.
+- [x] Build before/after bulk-edit confirmation dialog.
+- [x] Add audit filters and date-range pagination UI.
+- [x] Add real-time notification polling and toast alerts.
+- [x] Verify tests, responsive UI, and save a new checkpoint.
