@@ -66,3 +66,8 @@
 - [x] Add time-range filtering to the protected stream metrics contract.
 - [x] Add responsive connection and latency trend charts to the admin dashboard.
 - [x] Add threshold-based color-coded status indicators and verify the trend analytics feature.
+- [x] Create English narration and SRT files aligned to the revised demo timeline.
+- [x] Replace repeated early video frames with varied verified dashboard scenes.
+- [x] Write Devpost-ready project Description Markdown for direct copy/paste.
+- [x] Create and validate the major Gemini Ops Fleet architecture diagram.
+- [x] Render and validate the revised video and submission package.

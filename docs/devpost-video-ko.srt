@@ -1,0 +1,46 @@
+1
+00:00:00,000 --> 00:00:25,000
+의료 운영에서 자동화는 빠르게 만들 수 있지만, 안전하게 멈추게 하기는 어렵습니다.
+Gemini Ops Fleet은 헬스케어 에이전트가 권한과 데이터 경계를 넘지 않도록 설계한 운영 콘솔입니다.
+
+2
+00:00:25,000 --> 00:00:55,000
+Clinical Command Ledger는 비동기 라우팅, SQL 범위 제한, 인간 승인 게이트를 한 화면에 보여줍니다.
+이 시스템은 프롬프트를 기다리는 단일 챗봇이 아니라, 이벤트를 받아 업무를 수행하는 agent fleet입니다.
+
+3
+00:00:55,000 --> 00:01:25,000
+Agent Registry에는 각 에이전트의 버전, 도메인, capability, autonomy 등급과 제한사항이 기록됩니다.
+헬스케어 에이전트는 drafts only로 표시되어 외부로 직접 발송할 수 없습니다.
+
+4
+00:01:25,000 --> 00:01:55,000
+합성 denial 이벤트가 들어오면 actor, kind, routed agent, status를 기록하고 적절한 에이전트로 라우팅합니다.
+FastAPI publisher와 인증된 bridge, SSE가 운영자에게 실시간으로 알립니다.
+
+5
+00:01:55,000 --> 00:02:25,000
+분석 결과는 근거와 함께 approval queue에 도착합니다.
+운영자는 synthetic subject, evidence, destination, Gemini summary와 전체 clinical payload를 확인합니다.
+
+6
+00:02:25,000 --> 00:02:55,000
+승인이 없으면 draft는 안전하게 보류됩니다.
+전송을 시도하면 서버는 HTTP 409 Conflict를 반환합니다.
+이는 UI 규칙이 아니라 백엔드가 approval state를 다시 검사하는 서버 강제 human gate입니다.
+
+7
+00:02:55,000 --> 00:03:20,000
+권한 있는 Medical Director가 승인하면 서버는 인증된 세션에서 reviewer identity를 파생합니다.
+승인과 거절 이유는 audit log에 저장되고, 승인된 뒤에만 controlled action을 보낼 수 있습니다.
+
+8
+00:03:20,000 --> 00:03:45,000
+Operator Admin은 before-and-after dry run으로 bulk edit을 검토합니다.
+변경된 사용자만 audit row와 notification을 생성하며, 역할 변경 알림은 persistent inbox와 SSE로 전달됩니다.
+
+9
+00:03:45,000 --> 00:04:03,500
+Stream health는 active connections, delivery latency, dropped clients를 추적합니다.
+시간 범위를 바꾸면 trend를 확인할 수 있고, 임계치를 넘으면 Watch 또는 Critical 상태로 표시됩니다.
+자동화는 준비를 빠르게 만들고, 최종 결정은 책임 있는 사람이 소유합니다.

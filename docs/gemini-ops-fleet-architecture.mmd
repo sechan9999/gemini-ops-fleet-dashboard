@@ -1,0 +1,80 @@
+flowchart TB
+  subgraph E[Healthcare workflow events]
+    F[FastAPI fleet publisher]
+    W[Denial / care-gap / role-change events]
+    B[Authenticated event bridge]
+  end
+
+  subgraph A[Governed agent fleet]
+    P[Payer Intelligence<br/>policy RAG / denial analysis]
+    C[Clinical & Quality<br/>guideline RAG / care gaps]
+    T[Triage Agent<br/>classification / routing]
+    R[Reconcile Agent<br/>ledger comparison / variance]
+    REG[Drafts only<br/>capability and autonomy registry]
+  end
+
+  subgraph G[Server-enforced governance]
+    I[Server-derived operator identity]
+    S[SQL scope before retrieval]
+    RBAC[RBAC<br/>Medical Director / Data Scientist / Payer Ops]
+    H{Human approval gate}
+    ST[Approval state transition]
+    X[HTTP 409 before unapproved send]
+    Z[Blocked external action]
+  end
+
+  subgraph D[Durable evidence and audit]
+    DB[(MySQL / TiDB via Drizzle)]
+    AP[Approval requests]
+    AU[Audit history]
+    OP[Operator profiles]
+    NI[Notifications inbox]
+    MS[Metric snapshots]
+  end
+
+  subgraph O[Operations surface]
+    UI[React Clinical Command Ledger]
+    SSE[SSE notification stream]
+    PM[Prometheus /metrics]
+    CH[Admin trend charts]
+    TH[Watch / Critical thresholds]
+  end
+
+  W --> F --> B --> P
+  B --> C
+  B --> T
+  B --> R
+  P --> S
+  C --> S
+  T --> S
+  R --> S
+  REG -. governs .-> P
+  REG -. governs .-> C
+  REG -. governs .-> T
+  REG -. governs .-> R
+  I --> RBAC --> ST --> H
+  S --> H
+  H --> AP
+  AP --> DB
+  H --> AU
+  AU --> DB
+  OP --> DB
+  DB --> UI
+  AU --> UI
+  ST --> SSE --> UI
+  NI --> SSE
+  MS --> PM --> CH --> TH
+  X -.-> Z
+
+  classDef event fill:#e6f4f1,stroke:#087f73,color:#102b2b
+  classDef agent fill:#f4f0e5,stroke:#7f8d82,color:#1d2927
+  classDef control fill:#fff3d8,stroke:#b7791f,color:#3c2b11
+  classDef data fill:#eef1f8,stroke:#5569a6,color:#202b4a
+  classDef ops fill:#edf6f4,stroke:#087f73,color:#102b2b
+  classDef block fill:#fbe8e5,stroke:#c6534b,color:#5b211e
+  class F,W,B event
+  class P,C,T,R,REG agent
+  class I,S,RBAC,H,ST,X control
+  class DB,AP,AU,OP,NI,MS data
+  class UI,SSE,PM,CH,TH ops
+  class Z block

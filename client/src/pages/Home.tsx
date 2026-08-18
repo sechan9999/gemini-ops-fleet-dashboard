@@ -319,7 +319,7 @@ function RejectionDialog({ approval, onClose, onConfirm }: { approval: Approval 
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<TabId>(() => new URLSearchParams(window.location.search).get("tab") === "admin" ? "admin" : "overview");
+  const [activeTab, setActiveTab] = useState<TabId>(() => { const requested = new URLSearchParams(window.location.search).get("tab"); return tabs.some((tab) => tab.id === requested) ? requested as TabId : "overview"; });
   const [snapshot, setSnapshot] = useState<FleetSnapshot>(() => ({ ...demoSnapshot }));
   const [profile, setProfile] = useState<OperatorProfile>(() => ({ ...demoProfile }));
   const [selectedApproval, setSelectedApproval] = useState<Approval | null>(null);

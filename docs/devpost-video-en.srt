@@ -1,0 +1,45 @@
+1
+00:00:00,000 --> 00:00:25,000
+Healthcare operations can be automated quickly, but making automation stop safely is harder.
+Gemini Ops Fleet is a governed operations console for healthcare agents.
+
+2
+00:00:25,000 --> 00:00:55,000
+This is the Clinical Command Ledger: async routing, SQL scope, and a human gate.
+It is an event-driven agent fleet, not a chatbot waiting for prompts.
+
+3
+00:00:55,000 --> 00:01:25,000
+The Agent Registry publishes each agent's version, domain, capabilities, autonomy grade, and restrictions.
+Healthcare agents are Drafts only: they can prepare a packet, but cannot dispatch it directly.
+
+4
+00:01:25,000 --> 00:01:55,000
+A synthetic denial arrives as a business event.
+The system records its actor, event kind, routed agent, and state, then sends it to the correct scope.
+
+5
+00:01:55,000 --> 00:02:25,000
+The agent's analysis arrives with evidence in the approval queue.
+The detail drawer exposes the server-authorized payload and Gemini clinical summary.
+
+6
+00:02:25,000 --> 00:02:55,000
+Without approval, the draft remains safely held.
+An early send returns HTTP 409 Conflict because the server re-checks approval state on every request.
+
+7
+00:02:55,000 --> 00:03:20,000
+An authorized Medical Director approves the packet.
+The reviewer identity comes from the authenticated server session, and every decision is written to the audit trail.
+
+8
+00:03:20,000 --> 00:03:45,000
+Bulk edits begin with a before-and-after dry run.
+Role-change notifications arrive through the persistent inbox and Server-Sent Events.
+
+9
+00:03:45,000 --> 00:04:03,000
+Stream Health tracks connections, delivery latency, and dropped clients.
+Prometheus metrics and trend charts make the notification system observable.
+Automation prepares the work; the accountable human owns the decision.
