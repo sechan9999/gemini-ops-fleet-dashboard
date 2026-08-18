@@ -1,0 +1,3 @@
+# Realtime notification verification
+
+The desktop top-viewport capture at `/?inbox=1` shows the fixed notification inbox drawer with the operator inbox heading, close control, role-change/admin-action/toast preference checkboxes, mark-all-read action, and empty-state inbox content. The mobile capture at 390×844 shows the same drawer reflowed to a readable full-width panel with no horizontal overflow; preferences, mark-all-read, and the empty state remain visible and accessible. The admin full-page capture shows the server-paginated role-change audit and bulk editor. Build checks and the nine-test suite passed before these visual captures.

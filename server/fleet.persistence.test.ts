@@ -70,6 +70,18 @@ describe("fleet persistence", () => {
     await admin.admin.bulkUpdateProfiles({ userIds: [2, 3], dashboardRole: "data_scientist", department: "Clinical analytics", initials: "OP" });
   });
 
+  it("previews unchanged bulk targets and persists notification preferences", async () => {
+    const admin = appRouter.createCaller(context(9, "Platform Admin", "admin"));
+    const preview = await admin.admin.bulkDryRun({ userIds: [2, 3], dashboardRole: "data_scientist", department: "Clinical analytics", initials: "OP" });
+    expect(preview.unchangedCount).toBeGreaterThanOrEqual(0);
+    expect(preview.rows).toHaveLength(2);
+    const operator = appRouter.createCaller(context(2, "User 2"));
+    const updated = await operator.fleet.updateNotificationPreferences({ roleChanges: false, adminActions: true, toastEnabled: false });
+    expect(updated.toastEnabled).toBe(false);
+    expect(updated.roleChanges).toBe(false);
+    await operator.fleet.updateNotificationPreferences({ roleChanges: true, adminActions: true, toastEnabled: true });
+  });
+
   it("allows only admins to manage operator roles", async () => {
     const nonAdmin = appRouter.createCaller(context(1, "Dr. HK Chun"));
     await expect(nonAdmin.admin.profiles()).rejects.toThrow();

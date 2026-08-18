@@ -1,4 +1,4 @@
-import { index, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, index, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -151,3 +151,16 @@ export const operatorNotifications = mysqlTable("operatorNotifications", {
 
 export type OperatorNotification = typeof operatorNotifications.$inferSelect;
 export type InsertOperatorNotification = typeof operatorNotifications.$inferInsert;
+
+export const notificationPreferences = mysqlTable("notificationPreferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  roleChanges: boolean("roleChanges").notNull().default(true),
+  adminActions: boolean("adminActions").notNull().default(true),
+  toastEnabled: boolean("toastEnabled").notNull().default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type NotificationPreferences = typeof notificationPreferences.$inferSelect;
+export type InsertNotificationPreferences = typeof notificationPreferences.$inferInsert;

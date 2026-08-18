@@ -38,3 +38,18 @@
 - [x] Add audit filters and date-range pagination UI.
 - [x] Add real-time notification polling and toast alerts.
 - [x] Verify tests, responsive UI, and save a new checkpoint.
+
+- [x] Define SSE delivery, notification inbox, preference, and bulk dry-run contracts.
+- [x] Add durable notification preferences and inbox state.
+- [x] Add protected SSE notification endpoint and frontend subscription.
+- [x] Replace polling and retain toast delivery from SSE events.
+- [x] Add notification inbox and preference controls.
+- [x] Add admin bulk-change dry-run procedure and confirmation preview integration.
+- [x] Verify realtime delivery, authorization, persistence, tests, build, and responsive UI.
+- [x] Save and deliver a new checkpoint.
+
+- [x] Add a direct `?inbox=1` staging entry point for notification inbox verification.
+- [x] Verify the inbox, preferences, SSE-ready notification indicator, and dry-run preview on desktop and mobile.
+- [x] Save and deliver the realtime notification checkpoint.
+- [x] Add focused SSE registry delivery and user-isolation test coverage.
+- [x] Verify unauthenticated `/api/notifications/stream` requests return HTTP 401 in the running staging server.

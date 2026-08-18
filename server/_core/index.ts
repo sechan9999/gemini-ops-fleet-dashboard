@@ -7,6 +7,8 @@ import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { sdk } from "./sdk";
+import { heartbeatNotificationStreams, openNotificationStream } from "../notifications";
 import { serveStatic, setupVite } from "./vite";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -36,6 +38,17 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  app.get("/api/notifications/stream", async (req, res) => {
+    const user = await sdk.authenticateRequest(req).catch(() => null);
+    if (!user) { res.status(401).end(); return; }
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+    const cleanup = openNotificationStream(user.id, res);
+    const heartbeat = setInterval(() => heartbeatNotificationStreams(), 25_000);
+    req.on("close", () => { clearInterval(heartbeat); cleanup(); });
+  });
   // tRPC API
   app.use(
     "/api/trpc",

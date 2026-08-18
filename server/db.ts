@@ -1,6 +1,7 @@
 import { and, asc, count, desc, eq, gte, lte, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { adminRoleChanges, approvalRequests, auditEntries, fleetAgents, fleetEvents, InsertAdminRoleChange, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertOperatorNotification, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, operatorNotifications, operatorProfiles, runtimeTelemetry, users } from "../drizzle/schema";
+import { adminRoleChanges, approvalRequests, auditEntries, fleetAgents, fleetEvents, InsertAdminRoleChange, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertNotificationPreferences, InsertOperatorNotification, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, notificationPreferences, operatorNotifications, operatorProfiles, runtimeTelemetry, users } from "../drizzle/schema";
+import { publishNotification } from "./notifications";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -211,7 +212,26 @@ export async function createOperatorNotification(input: InsertOperatorNotificati
   const db = await getDb();
   if (!db) return undefined;
   const rows = await db.insert(operatorNotifications).values(input).$returningId();
-  return rows[0];
+  const created = rows[0]?.id ? (await db.select().from(operatorNotifications).where(eq(operatorNotifications.id, rows[0].id)).limit(1))[0] : undefined;
+  if (created) publishNotification(created);
+  return created;
+}
+
+export async function getNotificationPreferences(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(notificationPreferences).where(eq(notificationPreferences.userId, userId)).limit(1);
+  if (rows[0]) return rows[0];
+  await db.insert(notificationPreferences).values({ userId });
+  const created = await db.select().from(notificationPreferences).where(eq(notificationPreferences.userId, userId)).limit(1);
+  return created[0];
+}
+
+export async function upsertNotificationPreferences(input: InsertNotificationPreferences) {
+  const db = await getDb();
+  if (!db) return undefined;
+  await db.insert(notificationPreferences).values(input).onDuplicateKeyUpdate({ set: { roleChanges: input.roleChanges, adminActions: input.adminActions, toastEnabled: input.toastEnabled } });
+  return getNotificationPreferences(input.userId);
 }
 
 export async function listOperatorNotifications(userId: number, limit = 20) {

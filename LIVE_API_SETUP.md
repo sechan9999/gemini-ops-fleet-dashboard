@@ -32,3 +32,9 @@ The backend profile endpoint maps existing Fleet roles into dashboard roles with
 For a production healthcare deployment, replace this demonstration mapping with an explicit organization-level role/permission policy in the backend. The browser should continue receiving permissions from the server-derived profile rather than accepting a role selector.
 
 The rejection fields and reason are added non-destructively during database initialization for existing deployments. Confirm the migration in staging before production rollout and back up the approval table before deploying the schema change. The frontend detail drawer displays the complete server-authorized clinical payload and Gemini summary, while the approval queue CSV export includes only the currently filtered and sorted rows.
+
+## Realtime notifications and bulk dry-run
+
+The full-stack deployment exposes `GET /api/notifications/stream` as an authenticated Server-Sent Events endpoint. The dashboard opens this stream with the session cookie and listens for `notification` events; the server emits heartbeat events to keep the connection alive. Persistent inbox records are available through `fleet.notifications`, with `fleet.markNotificationsRead` for read state. User preferences are available through `fleet.notificationPreferences` and `fleet.updateNotificationPreferences`.
+
+Before an administrator commits a bulk role change, the dashboard calls `admin.bulkDryRun` with the selected user IDs and proposed role, department, and initials. The response identifies changed and unchanged users. Only the explicit confirmation action calls `admin.bulkUpdateProfiles`, so unchanged users do not produce audit rows or notifications.
