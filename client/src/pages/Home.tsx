@@ -1,6 +1,7 @@
 // Clinical Command Ledger design: warm paper surfaces, visible governance states, and evidence-led healthcare operations.
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 import {
   Activity,
   AlertTriangle,
@@ -262,11 +263,17 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const baseUrl = import.meta.env.VITE_FLEET_API_URL || "";
   const token = import.meta.env.VITE_FLEET_TOKEN || "demo-medical-director";
+  const fleetProfileQuery = trpc.fleet.profile.useQuery();
+  const fleetSnapshotQuery = trpc.fleet.snapshot.useQuery();
+  const transitionMutation = trpc.fleet.transition.useMutation();
+  const summarizeMutation = trpc.fleet.summarize.useMutation();
   const permissions = rolePermissions[profile.role];
   const scoped = useMemo(() => scopeSnapshot(snapshot, profile), [snapshot, profile]);
   const visibleTabs = tabs.filter((tab) => permissions.allowedTabs.includes(tab.id));
 
-  const refresh = async () => { setIsLoading(true); const [nextProfile, data] = await Promise.all([loadOperatorProfile(baseUrl, token), loadFleetSnapshot(baseUrl, token)]); setProfile(nextProfile); setSnapshot(data); setLastRefresh(new Date()); setIsLoading(false); };
+  useEffect(() => { if (fleetProfileQuery.data) setProfile({ ...fleetProfileQuery.data, source: "server" }); }, [fleetProfileQuery.data]);
+  useEffect(() => { if (fleetSnapshotQuery.data) setSnapshot((current) => ({ ...current, approvals: fleetSnapshotQuery.data.approvals, audit: fleetSnapshotQuery.data.audit })); }, [fleetSnapshotQuery.data]);
+  const refresh = async () => { setIsLoading(true); try { if (baseUrl) { const [nextProfile, data] = await Promise.all([loadOperatorProfile(baseUrl, token), loadFleetSnapshot(baseUrl, token)]); setProfile(nextProfile); setSnapshot(data); } else { await Promise.all([fleetProfileQuery.refetch(), fleetSnapshotQuery.refetch()]); } setLastRefresh(new Date()); } finally { setIsLoading(false); } };
   useEffect(() => { refresh(); }, []);
   useEffect(() => { if (!permissions.allowedTabs.includes(activeTab)) setActiveTab("overview"); }, [profile.role]);
 
@@ -281,6 +288,8 @@ export default function Home() {
         if (action === "approve") await approveDraft(baseUrl, token, id);
         if (action === "reject") await rejectDraft(baseUrl, token, id, rejectionReason);
         if (action === "send") await sendDraft(baseUrl, token, id);
+      } else {
+        await transitionMutation.mutateAsync({ id, action, reason: rejectionReason || undefined });
       }
     } catch (error) { toast.error(action === "approve" ? "Approval failed" : action === "reject" ? "Rejection failed" : "Send refused", { description: error instanceof Error ? error.message : "The governance API rejected this action." }); return; }
     const nextState = action === "approve" ? "approved" : action === "reject" ? "rejected" : "sent";
@@ -291,6 +300,12 @@ export default function Home() {
   const requestReject = (id: string) => setRejectionApproval(scoped.approvals.find((item) => item.id === id) || null);
 
   const summarizeApproval = async (id: string) => {
+    if (!baseUrl) {
+      const result = await summarizeMutation.mutateAsync({ id });
+      const summary = result?.aiSummary || "";
+      setSnapshot((current) => ({ ...current, approvals: current.approvals.map((item) => item.id === id ? { ...item, aiSummary: summary } : item) }));
+      return summary;
+    }
     const summary = await generateApprovalSummary(baseUrl, token, id);
     setSnapshot((current) => ({ ...current, approvals: current.approvals.map((item) => item.id === id ? { ...item, aiSummary: summary } : item) }));
     return summary;
