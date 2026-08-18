@@ -1,9 +1,8 @@
 # Task list
 
-- [x] Define rejection reason storage and mandatory confirmation behavior.
-- [x] Add rejection reason to the FastAPI endpoint and audit entry.
-- [x] Add rejection reason modal/input and validation in the dashboard.
-- [x] Expand approval detail modal with full clinical data and Gemini summary.
-- [x] Add CSV export for the currently filtered and sorted approval list.
-- [x] Create reusable skill with workflow, templates, and validation.
-- [x] Verify build, responsive UI, exports, and backend syntax.
+- [ ] Inspect current approval queue and repository status.
+- [ ] Add keyword search across patient/subject IDs and request fields.
+- [ ] Add pagination with page-size control and accessible navigation.
+- [ ] Verify staging-ready build, responsive layout, and filtered pagination behavior.
+- [ ] Commit the dashboard changes with a descriptive message.
+- [ ] Push the commit to the configured GitHub remote.
