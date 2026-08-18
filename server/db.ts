@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { approvalRequests, auditEntries, fleetAgents, fleetEvents, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, operatorProfiles, runtimeTelemetry, users } from "../drizzle/schema";
+import { adminRoleChanges, approvalRequests, auditEntries, fleetAgents, fleetEvents, InsertAdminRoleChange, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, operatorProfiles, runtimeTelemetry, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -171,6 +171,26 @@ export async function upsertOperatorProfile(input: InsertOperatorProfile) {
   if (!db) return undefined;
   await db.insert(operatorProfiles).values(input).onDuplicateKeyUpdate({ set: { dashboardRole: input.dashboardRole, department: input.department, initials: input.initials } });
   return getOperatorProfile(input.userId);
+}
+
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function recordRoleChange(input: InsertAdminRoleChange) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.insert(adminRoleChanges).values(input).$returningId();
+  return rows[0];
+}
+
+export async function listRoleChanges(limit = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(adminRoleChanges).orderBy(desc(adminRoleChanges.createdAt)).limit(limit);
 }
 
 export async function listOperatorProfiles() {

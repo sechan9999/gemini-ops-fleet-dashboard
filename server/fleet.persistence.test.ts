@@ -56,6 +56,16 @@ describe("fleet persistence", () => {
     expect(telemetry.events.length).toBeGreaterThan(0);
   });
 
+  it("records bulk role edits in the administrator audit log", async () => {
+    const admin = appRouter.createCaller(context(9, "Platform Admin", "admin"));
+    await admin.admin.bulkUpdateProfiles({ userIds: [2, 3], dashboardRole: "data_scientist", department: "Clinical analytics", initials: "OP" });
+    const updated = await admin.admin.bulkUpdateProfiles({ userIds: [2, 3], dashboardRole: "payer_operations", department: "Payer operations", initials: "PO" });
+    expect(updated).toHaveLength(2);
+    const changes = await admin.admin.roleChanges({ limit: 20 });
+    expect(changes.some((entry) => entry.newRole === "payer_operations" && entry.actorName === "Platform Admin")).toBe(true);
+    await admin.admin.bulkUpdateProfiles({ userIds: [2, 3], dashboardRole: "data_scientist", department: "Clinical analytics", initials: "OP" });
+  });
+
   it("allows only admins to manage operator roles", async () => {
     const nonAdmin = appRouter.createCaller(context(1, "Dr. HK Chun"));
     await expect(nonAdmin.admin.profiles()).rejects.toThrow();

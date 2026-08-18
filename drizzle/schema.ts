@@ -115,3 +115,23 @@ export type FleetEventRecord = typeof fleetEvents.$inferSelect;
 export type InsertRuntimeTelemetry = typeof runtimeTelemetry.$inferInsert;
 export type InsertFleetAgent = typeof fleetAgents.$inferInsert;
 export type InsertFleetEvent = typeof fleetEvents.$inferInsert;
+
+export const adminRoleChanges = mysqlTable("adminRoleChanges", {
+  id: int("id").autoincrement().primaryKey(),
+  targetUserId: int("targetUserId").notNull(),
+  actorUserId: int("actorUserId").notNull(),
+  actorName: varchar("actorName", { length: 160 }).notNull(),
+  targetName: varchar("targetName", { length: 160 }).notNull(),
+  previousRole: varchar("previousRole", { length: 40 }).notNull(),
+  newRole: varchar("newRole", { length: 40 }).notNull(),
+  previousDepartment: varchar("previousDepartment", { length: 120 }),
+  newDepartment: varchar("newDepartment", { length: 120 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  targetCreatedAtIdx: index("adminRoleChanges_target_createdAt_idx").on(table.targetUserId, table.createdAt),
+  actorCreatedAtIdx: index("adminRoleChanges_actor_createdAt_idx").on(table.actorUserId, table.createdAt),
+  createdAtIdx: index("adminRoleChanges_createdAt_idx").on(table.createdAt),
+}));
+
+export type AdminRoleChange = typeof adminRoleChanges.$inferSelect;
+export type InsertAdminRoleChange = typeof adminRoleChanges.$inferInsert;

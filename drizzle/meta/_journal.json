@@ -15,6 +15,13 @@
       "when": 1787080584193,
       "tag": "0001_clever_liz_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1787081520479,
+      "tag": "0002_previous_hiroim",
+      "breakpoints": true
     }
   ]
 }

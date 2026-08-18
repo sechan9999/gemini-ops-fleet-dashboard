@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addAuditEntry, ensureFleetSeeded, getApprovalRequest, getOperatorProfile, listApprovalRequests, listApprovalRequestsPage, listAuditEntries, listOperatorProfiles, listTelemetry, updateApprovalRequest, upsertOperatorProfile } from "./db";
+import { addAuditEntry, ensureFleetSeeded, getApprovalRequest, getOperatorProfile, getUserById, listApprovalRequests, listApprovalRequestsPage, listAuditEntries, listOperatorProfiles, listRoleChanges, listTelemetry, recordRoleChange, updateApprovalRequest, upsertOperatorProfile } from "./db";
 
 const dashboardRole = z.enum(["data_scientist", "medical_director", "payer_operations"]);
 const actionInput = z.object({ id: z.string().min(1), action: z.enum(["approve", "reject", "send"]), reason: z.string().optional() });
@@ -74,8 +74,20 @@ export const appRouter = router({
   }),
   admin: router({
     profiles: adminProcedure.query(async () => (await listOperatorProfiles()).map(normalizedProfile)),
-    updateProfile: adminProcedure.input(z.object({ userId: z.number().int().positive(), dashboardRole, department: z.string().max(120), initials: z.string().max(8) })).mutation(async ({ input }) => {
-      const updated = await upsertOperatorProfile(input); return updated ? { userId: updated.userId, dashboardRole: updated.dashboardRole, department: updated.department, initials: updated.initials } : null;
+    roleChanges: adminProcedure.input(z.object({ limit: z.number().int().min(1).max(200).default(100) }).optional()).query(async ({ input }) => (await listRoleChanges(input?.limit || 100)).map((entry) => ({ id: entry.id, targetUserId: entry.targetUserId, actorUserId: entry.actorUserId, actorName: entry.actorName, targetName: entry.targetName, previousRole: entry.previousRole, newRole: entry.newRole, previousDepartment: entry.previousDepartment || "", newDepartment: entry.newDepartment || "", createdAt: entry.createdAt.toISOString() }))),
+    updateProfile: adminProcedure.input(z.object({ userId: z.number().int().positive(), dashboardRole, department: z.string().max(120), initials: z.string().max(8) })).mutation(async ({ ctx, input }) => {
+      const previous = await getOperatorProfile(input.userId); const target = await getUserById(input.userId); const updated = await upsertOperatorProfile(input);
+      if (updated && previous && (previous.dashboardRole !== input.dashboardRole || (previous.department || "") !== input.department)) await recordRoleChange({ targetUserId: input.userId, actorUserId: ctx.user.id, actorName: ctx.user.name || "Administrator", targetName: target?.name || `User ${input.userId}`, previousRole: previous.dashboardRole, newRole: input.dashboardRole, previousDepartment: previous.department || null, newDepartment: input.department });
+      return updated ? { userId: updated.userId, dashboardRole: updated.dashboardRole, department: updated.department, initials: updated.initials } : null;
+    }),
+    bulkUpdateProfiles: adminProcedure.input(z.object({ userIds: z.array(z.number().int().positive()).min(1).max(100), dashboardRole, department: z.string().max(120), initials: z.string().max(8) })).mutation(async ({ ctx, input }) => {
+      const results = [];
+      for (const userId of input.userIds) {
+        const previous = await getOperatorProfile(userId); const target = await getUserById(userId); const updated = await upsertOperatorProfile({ userId, dashboardRole: input.dashboardRole, department: input.department, initials: input.initials });
+        if (updated && previous && (previous.dashboardRole !== input.dashboardRole || (previous.department || "") !== input.department)) await recordRoleChange({ targetUserId: userId, actorUserId: ctx.user.id, actorName: ctx.user.name || "Administrator", targetName: target?.name || `User ${userId}`, previousRole: previous.dashboardRole, newRole: input.dashboardRole, previousDepartment: previous.department || null, newDepartment: input.department });
+        if (updated) results.push({ userId, dashboardRole: updated.dashboardRole, department: updated.department, initials: updated.initials });
+      }
+      return results;
     }),
   }),
 });

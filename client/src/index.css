@@ -142,3 +142,28 @@
 .admin-input { width: 100%; min-width: 0; padding: 8px 9px; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 6px; font-size: 11px; outline: none; }
 .admin-input:focus { border-color: #a9cfc6; box-shadow: 0 0 0 3px rgba(15,118,110,.08); }
 @media (max-width: 760px) { .admin-profile-card { padding: 15px; } }
+
+.admin-chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+.admin-chart-card { min-height: 208px; }
+.admin-card-title { margin-top: 6px; color: var(--ink); font-size: 18px; font-weight: 700; letter-spacing: -.03em; }
+.admin-bars { display: grid; gap: 14px; margin-top: 22px; }
+.admin-bar-row { display: grid; gap: 6px; }
+.admin-bar-label { display: flex; justify-content: space-between; gap: 12px; color: #687572; font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: capitalize; }
+.admin-bar-label strong { color: var(--ink); }
+.admin-bar-track { height: 9px; overflow: hidden; border-radius: 99px; background: #e8ebe6; }
+.admin-bar-fill { display: block; height: 100%; border-radius: inherit; transition: width 220ms var(--ease-out); }
+.admin-bar-fill.teal { background: var(--teal); }
+.admin-bar-fill.amber { background: var(--amber); }
+.admin-bulk-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 16px; padding-bottom: 17px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
+.admin-bulk-fields { display: flex; align-items: end; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+.bulk-department { min-width: 150px; }
+.bulk-initials { width: 68px; }
+.admin-table-grid { grid-template-columns: 28px minmax(180px, 1.4fr) minmax(150px, 1fr) minmax(150px, .9fr) minmax(120px, .8fr); }
+.admin-check { display: grid; place-items: center; }
+.admin-check input { width: 15px; height: 15px; accent-color: var(--teal); }
+.admin-audit-card { margin-top: 14px; }
+.admin-audit-list { border-top: 1px solid var(--line); }
+.admin-audit-row { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.admin-audit-row:last-child { border-bottom: 0; }
+.audit-timeline-mark { display: grid; place-items: center; flex: 0 0 auto; width: 29px; height: 29px; color: var(--teal); background: var(--teal-soft); border-radius: 8px; }
+@media (max-width: 900px) { .admin-chart-grid { grid-template-columns: 1fr; } .admin-bulk-toolbar { align-items: stretch; flex-direction: column; } .admin-bulk-fields { justify-content: flex-start; } }

@@ -18,3 +18,15 @@
 - [x] Replace client-side approval pagination with server-side pagination.
 - [x] Update and validate the reusable agentic governance dashboard skill.
 - [x] Run migrations, tests, build, visual verification, and save a new checkpoint.
+
+- [x] Re-read the updated governance dashboard skill and current admin contracts.
+- [x] Add durable role-change audit records and protected admin procedures.
+- [x] Add role and department distribution charts.
+- [x] Add multi-user bulk role assignment with server-side authorization.
+- [x] Add admin role-change audit log interface.
+- [x] Verify charts, bulk editing, audit persistence, tests, build, and visual layout.
+- [x] Save the updated dashboard checkpoint and deliver the skill package.
+
+- [x] Add a direct admin-view entry point for staging verification.
+- [x] Visually verify charts, bulk selection, and role-change audit history in the admin view.
+- [x] Save and deliver a fresh checkpoint containing the latest admin UI changes.
