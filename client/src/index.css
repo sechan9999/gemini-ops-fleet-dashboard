@@ -277,3 +277,16 @@
 .ipc-comment-trigger { display: inline-flex; align-items: center; gap: .25rem; color: #087f73; font-size: .68rem; font-weight: 700; }
 .ipc-comment-trigger:hover { text-decoration: underline; }
 @media (max-width: 640px) { .ipc-comment-ai-summary { padding: .6rem; } .ipc-comment-entry time { display: block; margin-top: .15rem; } }
+
+/* IPC comment-history hover preview: concise, scrollable, and keyboard-friendly. */
+.ipc-comment-preview-wrap { position: relative; display: inline-flex; align-items: center; }
+.ipc-comment-preview { position: absolute; z-index: 30; top: calc(100% + .5rem); left: 0; display: grid; width: min(22rem, calc(100vw - 2rem)); gap: .45rem; padding: .75rem; border: 1px solid #cfe3dc; border-radius: 12px; background: #fffefa; box-shadow: 0 16px 34px rgba(32, 52, 47, .16); color: #334155; font-size: .72rem; line-height: 1.45; opacity: 0; pointer-events: none; transform: translateY(-4px); transition: opacity 160ms ease, transform 160ms ease; }
+.ipc-comment-preview-wrap:hover .ipc-comment-preview, .ipc-comment-trigger:focus-visible + .ipc-comment-preview { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.ipc-comment-preview-scroll { display: grid; max-height: 12rem; gap: .45rem; overflow-y: auto; padding-right: .2rem; }
+.ipc-comment-preview-item { position: relative; display: grid; gap: .18rem; border-left: 2px solid #d9e5e0; padding: .45rem .55rem; background: #fbfaf6; }
+.ipc-comment-preview-item.recent { border-left-color: #087f73; background: #eaf6f1; }
+.ipc-comment-preview-meta { color: #64748b; font-size: .62rem; font-weight: 700; }
+.ipc-comment-preview-latest { color: #087f73; font-size: .6rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+@media (max-width: 640px) { .ipc-comment-preview { position: fixed; top: auto; right: .75rem; bottom: .75rem; left: .75rem; width: auto; max-height: 45vh; } .ipc-comment-preview-wrap:hover .ipc-comment-preview { opacity: 0; pointer-events: none; } .ipc-comment-preview-wrap:focus-within .ipc-comment-preview { opacity: 1; pointer-events: auto; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .ipc-comment-preview { transition: none; } }
+.ipc-comment-category-empty { min-height: 14rem; display: grid; place-items: center; border: 1px dashed #d9d8cf; border-radius: 12px; color: #64748b; font-size: .8rem; text-align: center; }

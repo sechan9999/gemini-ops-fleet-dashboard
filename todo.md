@@ -144,4 +144,12 @@
 
 - [x] Create two governed synthetic IPC comments through the application mutation and verify chronological timeline/hover preview behavior before checkpointing.
 
-- [ ] Save and auto-publish the IPC comment timeline, AI categorization, and hover-preview release after real tRPC verification.
+- [x] Save and auto-publish the IPC comment timeline, AI categorization, and hover-preview release after real tRPC verification.
+
+- [x] Add a time-series chart for AI-categorized explanatory comment types.
+- [x] Enhance comment-history hover previews with scrolling and recent-comment emphasis.
+- [x] Add an IPC queue filter based on AI-generated explanatory-comment categories.
+- [x] Update and validate the reusable governance dashboard skill for category trends and previews.
+- [x] Test, document, and complete unauthenticated visual/code review for the IPC comment-category upgrade; authenticated IPC interaction intentionally skipped by user request.
+- [x] Complete final visual verification without authenticated browser interaction; rely on unauthenticated preview plus automated checks and code-level review.
+- [ ] Save and auto-publish the final IPC comment-category refinement checkpoint.
