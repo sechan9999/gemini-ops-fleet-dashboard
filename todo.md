@@ -75,4 +75,4 @@
 - [x] Validate the repaired API route with tests, build, and browser/network checks.
 - [x] Push current project HEAD to `sechan9999/payer-clinical-agents:gemini-ops-fleet-dashboard` without changing existing default branches. Deferred after GitHub returned 403; replaced by new repository push.
 - [x] Create a new private GitHub repository and push the current project main branch.
-- [ ] Add Gemini Ops Fleet README and related lightweight documentation/configuration files, then stage, commit, and push them to `main`.
+- [x] Add Gemini Ops Fleet README and related lightweight documentation/configuration files, then stage, commit, and push them to `main`.
