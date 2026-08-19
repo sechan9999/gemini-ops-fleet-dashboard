@@ -152,4 +152,6 @@
 - [x] Update and validate the reusable governance dashboard skill for category trends and previews.
 - [x] Test, document, and complete unauthenticated visual/code review for the IPC comment-category upgrade; authenticated IPC interaction intentionally skipped by user request.
 - [x] Complete final visual verification without authenticated browser interaction; rely on unauthenticated preview plus automated checks and code-level review.
-- [ ] Save and auto-publish the final IPC comment-category refinement checkpoint.
+- [x] Save and auto-publish the final IPC comment-category refinement checkpoint.
+- [x] Fix horizontal overflow and clipped IPC command-center controls at the deployed desktop viewport.
+- [x] Re-test responsive IPC layout, build, and publish the overflow fix.

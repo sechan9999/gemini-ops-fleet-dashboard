@@ -171,7 +171,7 @@ function Metric({ label, value, note, tone = "teal", icon: Icon }: { label: stri
 }
 
 function SectionHeading({ eyebrow, title, description, action }: { eyebrow: string; title: string; description?: string; action?: React.ReactNode }) {
-  return <div className="mb-5 flex items-end justify-between gap-4"><div><Eyebrow>{eyebrow}</Eyebrow><h2 className="section-title">{title}</h2>{description && <p className="section-description">{description}</p>}</div>{action}</div>;
+  return <div className="section-heading mb-5 flex min-w-0 items-end justify-between gap-4"><div className="section-heading-copy min-w-0"><Eyebrow>{eyebrow}</Eyebrow><h2 className="section-title">{title}</h2>{description && <p className="section-description">{description}</p>}</div>{action && <div className="section-heading-action min-w-0">{action}</div>}</div>;
 }
 
 function Overview({ snapshot, canReviewApprovals, onNavigate }: { snapshot: FleetSnapshot; canReviewApprovals: boolean; onNavigate: (tab: TabId) => void }) {
@@ -304,11 +304,11 @@ function IpcTrendPanel({ fallbackTrends, tasks, onCommentAssignments }: { fallba
   };
 
   const controls = (
-    <div className="flex flex-wrap items-end gap-2 border-b border-line bg-paper/50 p-4">
+    <div className="ipc-trend-controls flex min-w-0 flex-wrap items-end gap-2 border-b border-line bg-paper/50 p-4">
       <label className="date-control"><span>From</span><input type="date" value={dateFrom} max={dateTo || undefined} onChange={(event) => setDateFrom(event.target.value)} /></label>
       <label className="date-control"><span>To</span><input type="date" value={dateTo} min={dateFrom || undefined} onChange={(event) => setDateTo(event.target.value)} /></label>
       <button className="quiet-button compact" onClick={resetDates}>Reset range</button>
-      <div className="ml-auto flex flex-wrap gap-2">
+      <div className="ipc-trend-export-actions ml-auto flex min-w-0 flex-wrap gap-2">
         <button className="quiet-button compact" onClick={() => void exportChart("png")} disabled={!points.length}><Download size={14} /> PNG</button>
         <button className="quiet-button compact" onClick={() => void exportChart("pdf")} disabled={!points.length}><Download size={14} /> PDF</button>
       </div>
@@ -318,9 +318,9 @@ function IpcTrendPanel({ fallbackTrends, tasks, onCommentAssignments }: { fallba
 
   return (
     <div ref={panelRef} className="ledger-card mt-5 overflow-hidden">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line p-5">
-        <div><Eyebrow>IPC OPERATIONS / {range.toUpperCase()}</Eyebrow><h2 className="admin-card-title">Task queue trends</h2><p className="mt-1 text-sm text-slate-500">Synthetic facility workload history keeps open tasks, completions, and human decisions visible.</p></div>
-        <div className="flex flex-wrap items-center justify-end gap-2"><span className="state-pill pill-amber">Synthetic trend</span><div className="flex rounded-lg border border-line bg-paper p-1"><button className={`trend-toggle ${range === "daily" ? "active" : ""}`} onClick={() => selectRange("daily")}>Daily</button><button className={`trend-toggle ${range === "weekly" ? "active" : ""}`} onClick={() => selectRange("weekly")}>Weekly</button></div></div>
+      <div className="ipc-trend-header flex min-w-0 flex-wrap items-start justify-between gap-3 border-b border-line p-5">
+        <div className="ipc-trend-header-copy min-w-0"><Eyebrow>IPC OPERATIONS / {range.toUpperCase()}</Eyebrow><h2 className="admin-card-title">Task queue trends</h2><p className="mt-1 text-sm text-slate-500">Synthetic facility workload history keeps open tasks, completions, and human decisions visible.</p></div>
+        <div className="ipc-trend-header-actions flex min-w-0 flex-wrap items-center justify-end gap-2"><span className="state-pill pill-amber">Synthetic trend</span><div className="flex rounded-lg border border-line bg-paper p-1"><button className={`trend-toggle ${range === "daily" ? "active" : ""}`} onClick={() => selectRange("daily")}>Daily</button><button className={`trend-toggle ${range === "weekly" ? "active" : ""}`} onClick={() => selectRange("weekly")}>Weekly</button></div></div>
       </div>
       {controls}
       <div className="ipc-summary-widget">
