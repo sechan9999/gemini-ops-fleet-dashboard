@@ -158,4 +158,4 @@
 - [x] Group IPC queue controls into filter and export sections.
 - [x] Add hover and keyboard-focus tooltips to IPC queue action buttons.
 - [x] Add loading animation and disabled state while IPC data exports are generated.
-- [ ] Test, visually verify, and publish the IPC queue usability update.
+- [x] Test, publish, and complete unauthenticated shell plus code-level verification for the IPC queue usability update; authenticated IPC interaction intentionally skipped by user request.
