@@ -1,0 +1,1 @@
+ALTER TABLE `ipcTasks` ADD `lastComment` text;

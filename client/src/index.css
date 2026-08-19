@@ -260,3 +260,11 @@
 @keyframes ipc-progress-pulse { from { transform: translateX(-24px); width: 40%; } to { transform: translateX(55px); width: 70%; } }
 @media (prefers-reduced-motion: reduce) { .ipc-progress-track span { animation: none; width: 100% !important; } }
 @media (max-width: 640px) { .ipc-bulk-progress { flex-basis: 100%; } .ipc-question-box .text-input { width: 100%; } .ipc-inline-comment { align-items: stretch; flex-direction: column; } }
+
+.ipc-history-panel { margin-top: .75rem; border-top: 1px solid #dbe8e1; padding-top: .65rem; }
+.ipc-history-panel summary { display: flex; align-items: center; justify-content: space-between; color: #087f73; cursor: pointer; font-size: .72rem; font-weight: 700; list-style: none; }
+.ipc-history-panel summary span:first-child { display: inline-flex; align-items: center; gap: .35rem; }
+.ipc-history-item { border: 1px solid #e4ebe7; border-radius: 10px; padding: .65rem .7rem; background: rgba(255,255,255,.7); }
+.icon-button.small { width: 26px; height: 26px; }
+.bulk-comment-input { min-width: 220px; padding: .45rem .6rem; font-size: .72rem; }
+@media (max-width: 640px) { .bulk-comment-input { flex-basis: 100%; min-width: 0; } }

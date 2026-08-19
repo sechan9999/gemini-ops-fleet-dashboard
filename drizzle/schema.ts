@@ -213,6 +213,7 @@ export const ipcTasks = mysqlTable("ipcTasks", {
   kind: mysqlEnum("kind", ["precaution", "cleaning", "training"]).notNull(),
   reason: mysqlEnum("reason", ["coverage_gap", "ppe_readiness", "environmental_cleaning", "training_gap"]).notNull(),
   updatedBy: varchar("updatedBy", { length: 160 }),
+  lastComment: text("lastComment"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

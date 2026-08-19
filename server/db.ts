@@ -110,11 +110,11 @@ export async function listIpcTasks() {
   return db.select().from(ipcTasks).orderBy(sql`FIELD(${ipcTasks.priority}, 'high', 'medium', 'low'), ${ipcTasks.updatedAt} DESC`);
 }
 
-export async function updateIpcTasks(input: { taskIds: string[]; priority?: "high" | "medium" | "low"; status?: "open" | "in_progress" | "completed"; updatedBy: string }) {
+export async function updateIpcTasks(input: { taskIds: string[]; priority?: "high" | "medium" | "low"; status?: "open" | "in_progress" | "completed"; lastComment?: string; updatedBy: string }) {
   await ensureIpcTasksSeeded();
   const db = await getDb();
   if (!db) return [];
-  await db.update(ipcTasks).set({ ...(input.priority ? { priority: input.priority } : {}), ...(input.status ? { status: input.status } : {}), updatedBy: input.updatedBy }).where(inArray(ipcTasks.id, input.taskIds));
+  await db.update(ipcTasks).set({ ...(input.priority ? { priority: input.priority } : {}), ...(input.status ? { status: input.status } : {}), ...(input.lastComment?.trim() ? { lastComment: input.lastComment.trim() } : {}), updatedBy: input.updatedBy }).where(inArray(ipcTasks.id, input.taskIds));
   return db.select().from(ipcTasks).where(inArray(ipcTasks.id, input.taskIds));
 }
 

@@ -56,7 +56,16 @@ export const appRouter = router({
     markNotificationsRead: protectedProcedure.mutation(async ({ ctx }) => { await markOperatorNotificationsRead(ctx.user.id); return { success: true }; }),
     notificationPreferences: protectedProcedure.query(async ({ ctx }) => { const prefs = await getNotificationPreferences(ctx.user.id); return { roleChanges: prefs?.roleChanges ?? true, adminActions: prefs?.adminActions ?? true, toastEnabled: prefs?.toastEnabled ?? true }; }),
     updateNotificationPreferences: protectedProcedure.input(z.object({ roleChanges: z.boolean(), adminActions: z.boolean(), toastEnabled: z.boolean() })).mutation(async ({ ctx, input }) => { const prefs = await upsertNotificationPreferences({ userId: ctx.user.id, ...input }); return { roleChanges: prefs?.roleChanges ?? input.roleChanges, adminActions: prefs?.adminActions ?? input.adminActions, toastEnabled: prefs?.toastEnabled ?? input.toastEnabled }; }),
-    infectionControl: protectedProcedure.query(async () => { const overview = getInfectionControlOverview(); const tasks = await listIpcTasks(); return { ...overview, tasks: tasks.length ? tasks.map((task) => ({ id: task.id, label: task.label, count: task.count, tone: task.tone, priority: task.priority, status: task.status, kind: task.kind, reason: task.reason })) : overview.tasks }; }),
+    infectionControl: protectedProcedure.query(async () => {
+      const overview = getInfectionControlOverview();
+      const tasks = await listIpcTasks();
+      return {
+        ...overview,
+        tasks: tasks.length
+          ? tasks.map((task) => ({ id: task.id, label: task.label, count: task.count, tone: task.tone, priority: task.priority, status: task.status, kind: task.kind, reason: task.reason, lastComment: task.lastComment || null }))
+          : overview.tasks.map((task) => ({ ...task, lastComment: null })),
+      };
+    }),
     infectionControlTrends: protectedProcedure.input(z.object({ from: z.string().optional(), to: z.string().optional() }).optional()).query(async ({ input }) => getInfectionControlTrends(input)),
     infectionControlTransition: protectedProcedure.input(z.object({ signal: z.string().min(1), action: z.enum(["verify", "escalate", "dismiss"]), reason: z.string().optional() })).mutation(async ({ ctx, input }) => {
       const profile = await profileFor(ctx.user);

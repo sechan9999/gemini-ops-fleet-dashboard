@@ -107,3 +107,9 @@ Final validation passed with 21 Vitest tests, TypeScript, production build, mana
 The trend panel now accepts natural-language questions about the selected daily or weekly trend range. Questions and bounded queue context are sent only to a protected server-side procedure; the model is instructed to answer from supplied synthetic operational data, state uncertainty, and decline diagnosis, treatment, invented facts, or autonomous decisions. The UI shows the answer source context and a deterministic fallback when the model is unavailable.
 
 Bulk IPC updates now expose an animated progress bar, updating state, and a success confirmation that the change was saved and audited. Inline task editors include a quick Note control with a 500-character explanatory comment field. When a status or priority change is submitted, the note travels through the protected mutation and is stored in the attributed audit detail.
+
+## IPC Q&A History and Comment Review
+
+The Gemini trend widget now keeps the latest twelve bounded natural-language questions and answers in browser storage. Each history item records the selected range and timestamp, can be expanded for review, and includes a clipboard copy action for report drafting. The answer remains constrained to the supplied synthetic operational context.
+
+The IPC queue now includes a dedicated “with explanatory comments” filter, searches comment text, displays the latest durable note, and preserves the filter in saved presets. Bulk status updates provide an optional shared comment field; the comment is persisted to every selected task and copied into every attributed audit detail. The reusable `agentic-ops-governance-dashboard` skill now documents these patterns and validates successfully.

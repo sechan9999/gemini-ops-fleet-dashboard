@@ -123,4 +123,12 @@
 - [x] Add audited explanatory comments when inline task status changes are made.
 - [x] Test, document, visually verify, and checkpoint the IPC questions/progress/comments upgrade.
 
-- [ ] Save a new checkpoint after the IPC natural-language questions, bulk progress feedback, and inline comment changes.
+- [x] Save a new checkpoint after the IPC natural-language questions, bulk progress feedback, and inline comment changes.
+
+- [x] Add AI question-and-answer history with copy actions in the trend widget.
+- [x] Add a task-queue filter for tasks with inline explanatory comments.
+- [x] Add shared explanatory comments to bulk status updates and audit details.
+- [x] Update and validate the reusable governance dashboard skill for these patterns.
+- [x] Test, document, visually verify, and checkpoint the IPC history/comment upgrade.
+
+- [ ] Save and auto-publish a new checkpoint for the IPC Q&A history, comment-filter, and shared-bulk-comment upgrade.
