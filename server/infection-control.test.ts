@@ -28,11 +28,11 @@ describe("infection-control overview", () => {
 
   it("exposes reason-tagged tasks and both daily and weekly operational trends", () => {
     const overview = getInfectionControlOverview();
-    expect(overview.tasks.every(task => task.reason)).toBe(true);
+    expect(overview.tasks.every(task => task.id && task.reason)).toBe(true);
     expect(overview.trends.source).toBe("synthetic_facility");
     expect(overview.trends.daily).toHaveLength(7);
     expect(overview.trends.weekly).toHaveLength(4);
-    expect(overview.trends.daily.every(point => point.openTasks >= 0 && point.completedTasks >= 0)).toBe(true);
+    expect(overview.trends.daily.every(point => /^2026-\d{2}-\d{2}$/.test(point.dateKey) && point.openTasks >= 0 && point.completedTasks >= 0)).toBe(true);
   });
 
   it("keeps autonomous declarations disabled and human approval required", () => {

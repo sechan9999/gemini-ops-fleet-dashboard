@@ -163,12 +163,13 @@ x-trpc-procedures:
     admin.streamMetrics: "range=1h|6h|24h|7d"
     admin.bulkDryRun: "userIds, dashboardRole, department, initials"
     admin.roleChanges: page, pageSize, query, newRole, from, to
-    fleet.infectionControlTrends: no input; returns synthetic daily and weekly queue-load and human-decision trend points
+    fleet.infectionControlTrends: no input; returns synthetic daily and weekly queue-load and human-decision trend points with ISO dateKey values for client-selected ranges
     fleet.infectionControlTransition: signal, action=verify|escalate|dismiss, reason required for escalate or dismiss
     admin.ipcPolicy: facilityId optional, defaults to default-hospital
     admin.updateIpcPolicy: facilityId, facilityName, handHygieneWatchPct, handHygieneCriticalPct, evidenceStaleMinutes, ppeStaleHours, urgentNotifications, watchNotifications, lowResourceDefault; critical must be lower than watch
   exportContracts:
-    ipcQueueCsv: "Browser export of the currently filtered IPC work queue with task, count, priority, kind, escalation_reason, and exported_at columns"
+    ipcQueueCsv: "Browser export of the currently filtered IPC work queue with task_id, task, count, priority, kind, escalation_reason, and exported_at columns; the UI filters by reason and ID/keyword before export"
+    ipcTrendReports: "Browser-generated PNG or PDF snapshot of the currently selected daily/weekly IPC trend charts and custom date range"
     auditCsv: "Browser export of filtered audit records with id, actor, role, tool, outcome, detail, and timestamp columns"
 components:
   securitySchemes:

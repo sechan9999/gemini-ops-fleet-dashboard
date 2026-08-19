@@ -97,3 +97,8 @@
 - [x] Add unsaved changes warnings and success feedback to the IPC policy editor.
 - [x] Add escalation-reason filters to the IPC task queue and export only filtered tasks.
 - [x] Test, document, visually verify, and checkpoint the IPC analytics and filtering upgrade.
+
+- [x] Add custom date-range selection to IPC task trend charts.
+- [x] Add PNG and PDF export controls for IPC trend charts.
+- [x] Add keyword/ID search to the IPC task queue while preserving reason filtering and filtered CSV export.
+- [x] Test, document, visually verify, and checkpoint the IPC sharing and search upgrade.

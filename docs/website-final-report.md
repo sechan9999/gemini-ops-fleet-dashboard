@@ -65,3 +65,13 @@ The hospital policy editor now tracks a saved baseline, displays an unsaved-chan
 The IPC queue now carries structured escalation-reason labels, supports filtering by coverage gap, PPE readiness, environmental cleaning, and training gap, and exports only the currently filtered tasks. The CSV includes an `escalation_reason` column so downstream review retains the reason context.
 
 Validation for this increment passed with 20 Vitest tests, TypeScript, production build, desktop screenshots, and 390×844 mobile screenshots. The charts render with visible lines, the queue filter remains usable on the compact layout, and the policy form stays readable on mobile.
+
+## Latest IPC Sharing and Search Enhancements
+
+The IPC trend panel now supports custom date ranges over stable ISO-dated daily and weekly synthetic samples. Users can reset the range, switch between daily and weekly views, and receive a clear empty-state message when no samples fall within the selected interval.
+
+The chart panel can be downloaded as a PNG or PDF snapshot. Exports include the selected trend mode, date range, chart legends, and visible governance labeling, and complete with success or failure feedback.
+
+The IPC task queue now exposes stable task IDs and a keyword search field. Search matches task IDs, task names, reason codes, and human-readable escalation reasons, and combines with the existing reason selector. CSV export continues to include only the currently filtered tasks and now includes `task_id`.
+
+Validation for this increment passed with 20 Vitest tests, TypeScript, production build, desktop visual verification, and narrow mobile visual verification after a responsive Recharts sizing adjustment.

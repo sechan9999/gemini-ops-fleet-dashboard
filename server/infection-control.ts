@@ -12,6 +12,7 @@ export type InfectionControlSignal = {
 export type InfectionControlTaskReason = "coverage_gap" | "ppe_readiness" | "environmental_cleaning" | "training_gap";
 
 export type InfectionControlTask = {
+  id: string;
   label: string;
   count: number;
   tone: "urgent" | "watch" | "stable";
@@ -20,6 +21,7 @@ export type InfectionControlTask = {
 };
 
 export type InfectionControlTrendPoint = {
+  dateKey: string;
   label: string;
   openTasks: number;
   urgentTasks: number;
@@ -61,9 +63,9 @@ export function getInfectionControlOverview() {
       { ward: "Ward 3 · Rehab", signal: "Environmental cleaning feedback", level: "stable", freshness: "1 hr ago", owner: "Environmental services", evidence: "12 of 12 high-touch checks recorded", action: "Continue current audit cadence", resource: "No additional staffing" },
     ] satisfies InfectionControlSignal[],
     tasks: [
-      { label: "Transmission-based precaution review", count: 2, tone: "urgent", kind: "precaution", reason: "coverage_gap" },
-      { label: "High-touch surface verification", count: 4, tone: "watch", kind: "cleaning", reason: "environmental_cleaning" },
-      { label: "Frontline refresher training", count: 1, tone: "stable", kind: "training", reason: "training_gap" },
+      { id: "ipc-precaution-review", label: "Transmission-based precaution review", count: 2, tone: "urgent", kind: "precaution", reason: "coverage_gap" },
+      { id: "ipc-surface-verification", label: "High-touch surface verification", count: 4, tone: "watch", kind: "cleaning", reason: "environmental_cleaning" },
+      { id: "ipc-refresher-training", label: "Frontline refresher training", count: 1, tone: "stable", kind: "training", reason: "training_gap" },
     ] satisfies InfectionControlTask[],
     safety: {
       syntheticOnly: true,
@@ -78,19 +80,19 @@ export function getInfectionControlTrends() {
   return {
     source: "synthetic_facility" as const,
     daily: [
-      { label: "Mon", openTasks: 9, urgentTasks: 3, watchTasks: 4, stableTasks: 2, completedTasks: 5, escalations: 1, dismissals: 0 },
-      { label: "Tue", openTasks: 8, urgentTasks: 2, watchTasks: 4, stableTasks: 2, completedTasks: 6, escalations: 1, dismissals: 1 },
-      { label: "Wed", openTasks: 10, urgentTasks: 4, watchTasks: 4, stableTasks: 2, completedTasks: 4, escalations: 2, dismissals: 0 },
-      { label: "Thu", openTasks: 7, urgentTasks: 2, watchTasks: 3, stableTasks: 2, completedTasks: 8, escalations: 1, dismissals: 1 },
-      { label: "Fri", openTasks: 6, urgentTasks: 1, watchTasks: 3, stableTasks: 2, completedTasks: 9, escalations: 0, dismissals: 2 },
-      { label: "Sat", openTasks: 7, urgentTasks: 2, watchTasks: 3, stableTasks: 2, completedTasks: 6, escalations: 1, dismissals: 0 },
-      { label: "Sun", openTasks: 7, urgentTasks: 2, watchTasks: 4, stableTasks: 1, completedTasks: 7, escalations: 1, dismissals: 1 },
+      { dateKey: "2026-08-10", label: "Mon", openTasks: 9, urgentTasks: 3, watchTasks: 4, stableTasks: 2, completedTasks: 5, escalations: 1, dismissals: 0 },
+      { dateKey: "2026-08-11", label: "Tue", openTasks: 8, urgentTasks: 2, watchTasks: 4, stableTasks: 2, completedTasks: 6, escalations: 1, dismissals: 1 },
+      { dateKey: "2026-08-12", label: "Wed", openTasks: 10, urgentTasks: 4, watchTasks: 4, stableTasks: 2, completedTasks: 4, escalations: 2, dismissals: 0 },
+      { dateKey: "2026-08-13", label: "Thu", openTasks: 7, urgentTasks: 2, watchTasks: 3, stableTasks: 2, completedTasks: 8, escalations: 1, dismissals: 1 },
+      { dateKey: "2026-08-14", label: "Fri", openTasks: 6, urgentTasks: 1, watchTasks: 3, stableTasks: 2, completedTasks: 9, escalations: 0, dismissals: 2 },
+      { dateKey: "2026-08-15", label: "Sat", openTasks: 7, urgentTasks: 2, watchTasks: 3, stableTasks: 2, completedTasks: 6, escalations: 1, dismissals: 0 },
+      { dateKey: "2026-08-16", label: "Sun", openTasks: 7, urgentTasks: 2, watchTasks: 4, stableTasks: 1, completedTasks: 7, escalations: 1, dismissals: 1 },
     ] satisfies InfectionControlTrendPoint[],
     weekly: [
-      { label: "Week 1", openTasks: 42, urgentTasks: 12, watchTasks: 20, stableTasks: 10, completedTasks: 31, escalations: 4, dismissals: 3 },
-      { label: "Week 2", openTasks: 38, urgentTasks: 10, watchTasks: 19, stableTasks: 9, completedTasks: 36, escalations: 3, dismissals: 4 },
-      { label: "Week 3", openTasks: 34, urgentTasks: 8, watchTasks: 18, stableTasks: 8, completedTasks: 41, escalations: 3, dismissals: 5 },
-      { label: "Week 4", openTasks: 29, urgentTasks: 7, watchTasks: 15, stableTasks: 7, completedTasks: 47, escalations: 2, dismissals: 6 },
+      { dateKey: "2026-07-20", label: "Week 1", openTasks: 42, urgentTasks: 12, watchTasks: 20, stableTasks: 10, completedTasks: 31, escalations: 4, dismissals: 3 },
+      { dateKey: "2026-07-27", label: "Week 2", openTasks: 38, urgentTasks: 10, watchTasks: 19, stableTasks: 9, completedTasks: 36, escalations: 3, dismissals: 4 },
+      { dateKey: "2026-08-03", label: "Week 3", openTasks: 34, urgentTasks: 8, watchTasks: 18, stableTasks: 8, completedTasks: 41, escalations: 3, dismissals: 5 },
+      { dateKey: "2026-08-10", label: "Week 4", openTasks: 29, urgentTasks: 7, watchTasks: 15, stableTasks: 7, completedTasks: 47, escalations: 2, dismissals: 6 },
     ] satisfies InfectionControlTrendPoint[],
   };
 }
