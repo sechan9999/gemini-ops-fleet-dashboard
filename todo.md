@@ -155,3 +155,7 @@
 - [x] Save and auto-publish the final IPC comment-category refinement checkpoint.
 - [x] Fix horizontal overflow and clipped IPC command-center controls at the deployed desktop viewport.
 - [x] Re-test responsive IPC layout, build, and publish the overflow fix.
+- [x] Group IPC queue controls into filter and export sections.
+- [x] Add hover and keyboard-focus tooltips to IPC queue action buttons.
+- [x] Add loading animation and disabled state while IPC data exports are generated.
+- [ ] Test, visually verify, and publish the IPC queue usability update.

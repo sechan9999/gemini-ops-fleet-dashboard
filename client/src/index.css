@@ -329,3 +329,19 @@ html, body, #root { max-width: 100%; overflow-x: hidden; }
   .ipc-trend-controls { padding: 12px; }
   .ipc-trend-export-actions { width: 100%; justify-content: flex-start; }
 }
+
+/* IPC queue toolbar groups and export feedback. */
+.ipc-queue-toolbar { display: grid; width: 100%; min-width: 0; gap: .65rem; }
+.ipc-queue-group { min-width: 0; padding: .65rem; border: 1px solid #e4e8e1; border-radius: 10px; background: rgba(251, 252, 249, .82); }
+.ipc-filter-group { background: #fbfaf6; }
+.ipc-export-group { display: flex; align-items: center; justify-content: space-between; gap: .75rem; background: #f4faf7; }
+.ipc-queue-group-label { display: inline-flex; align-items: center; gap: .35rem; margin-bottom: .45rem; color: #59746d; font: 600 .62rem 'IBM Plex Mono', monospace; letter-spacing: .1em; }
+.ipc-queue-filter-controls, .ipc-queue-export-controls { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: .45rem; }
+.ipc-queue-export-controls { margin-left: auto; justify-content: flex-end; }
+.ipc-queue-export-controls .tooltip-trigger { display: inline-flex; }
+.ipc-queue-export-controls button[disabled] { cursor: wait; opacity: .7; }
+@media (max-width: 720px) {
+  .ipc-export-group { align-items: stretch; flex-direction: column; }
+  .ipc-queue-export-controls { width: 100%; margin-left: 0; justify-content: flex-start; }
+  .ipc-queue-export-controls > *, .ipc-queue-filter-controls > * { max-width: 100%; }
+}
