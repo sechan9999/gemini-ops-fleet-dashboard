@@ -16,6 +16,7 @@ export type InfectionControlTask = {
   label: string;
   count: number;
   tone: "urgent" | "watch" | "stable";
+  priority: "high" | "medium" | "low";
   kind: "precaution" | "cleaning" | "training";
   reason: InfectionControlTaskReason;
 };
@@ -63,9 +64,9 @@ export function getInfectionControlOverview() {
       { ward: "Ward 3 · Rehab", signal: "Environmental cleaning feedback", level: "stable", freshness: "1 hr ago", owner: "Environmental services", evidence: "12 of 12 high-touch checks recorded", action: "Continue current audit cadence", resource: "No additional staffing" },
     ] satisfies InfectionControlSignal[],
     tasks: [
-      { id: "ipc-precaution-review", label: "Transmission-based precaution review", count: 2, tone: "urgent", kind: "precaution", reason: "coverage_gap" },
-      { id: "ipc-surface-verification", label: "High-touch surface verification", count: 4, tone: "watch", kind: "cleaning", reason: "environmental_cleaning" },
-      { id: "ipc-refresher-training", label: "Frontline refresher training", count: 1, tone: "stable", kind: "training", reason: "training_gap" },
+      { id: "ipc-precaution-review", label: "Transmission-based precaution review", count: 2, tone: "urgent", priority: "high", kind: "precaution", reason: "coverage_gap" },
+      { id: "ipc-surface-verification", label: "High-touch surface verification", count: 4, tone: "watch", priority: "medium", kind: "cleaning", reason: "environmental_cleaning" },
+      { id: "ipc-refresher-training", label: "Frontline refresher training", count: 1, tone: "stable", priority: "low", kind: "training", reason: "training_gap" },
     ] satisfies InfectionControlTask[],
     safety: {
       syntheticOnly: true,
@@ -76,7 +77,8 @@ export function getInfectionControlOverview() {
   };
 }
 
-export function getInfectionControlTrends() {
+export function getInfectionControlTrends(filters?: { from?: string; to?: string }) {
+  const inRange = (dateKey: string) => (!filters?.from || dateKey >= filters.from) && (!filters?.to || dateKey <= filters.to);
   return {
     source: "synthetic_facility" as const,
     daily: [
@@ -87,12 +89,12 @@ export function getInfectionControlTrends() {
       { dateKey: "2026-08-14", label: "Fri", openTasks: 6, urgentTasks: 1, watchTasks: 3, stableTasks: 2, completedTasks: 9, escalations: 0, dismissals: 2 },
       { dateKey: "2026-08-15", label: "Sat", openTasks: 7, urgentTasks: 2, watchTasks: 3, stableTasks: 2, completedTasks: 6, escalations: 1, dismissals: 0 },
       { dateKey: "2026-08-16", label: "Sun", openTasks: 7, urgentTasks: 2, watchTasks: 4, stableTasks: 1, completedTasks: 7, escalations: 1, dismissals: 1 },
-    ] satisfies InfectionControlTrendPoint[],
+    ].filter((point) => inRange(point.dateKey)) satisfies InfectionControlTrendPoint[],
     weekly: [
       { dateKey: "2026-07-20", label: "Week 1", openTasks: 42, urgentTasks: 12, watchTasks: 20, stableTasks: 10, completedTasks: 31, escalations: 4, dismissals: 3 },
       { dateKey: "2026-07-27", label: "Week 2", openTasks: 38, urgentTasks: 10, watchTasks: 19, stableTasks: 9, completedTasks: 36, escalations: 3, dismissals: 4 },
       { dateKey: "2026-08-03", label: "Week 3", openTasks: 34, urgentTasks: 8, watchTasks: 18, stableTasks: 8, completedTasks: 41, escalations: 3, dismissals: 5 },
       { dateKey: "2026-08-10", label: "Week 4", openTasks: 29, urgentTasks: 7, watchTasks: 15, stableTasks: 7, completedTasks: 47, escalations: 2, dismissals: 6 },
-    ] satisfies InfectionControlTrendPoint[],
+    ].filter((point) => inRange(point.dateKey)) satisfies InfectionControlTrendPoint[],
   };
 }

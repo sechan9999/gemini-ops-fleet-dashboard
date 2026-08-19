@@ -11,6 +11,7 @@ import {
   ArrowDownUp,
   ArrowUpRight,
   Bell,
+  Bookmark,
   Bot,
   Check,
   CheckCircle2,
@@ -32,6 +33,8 @@ import {
   Search,
   Send,
   ShieldCheck,
+  Save,
+  Trash2,
   Sparkles,
   Terminal,
   X,
@@ -195,49 +198,132 @@ const ipcSignals: IpcSignal[] = [
 ];
 
 const ipcTasks = [
-  { id: "ipc-precaution-review", label: "Transmission-based precaution review", count: 2, tone: "urgent", kind: "precaution" as const, icon: Siren, reason: "coverage_gap" as const },
-  { id: "ipc-surface-verification", label: "High-touch surface verification", count: 4, tone: "watch", kind: "cleaning" as const, icon: Droplets, reason: "environmental_cleaning" as const },
-  { id: "ipc-refresher-training", label: "Frontline refresher training", count: 1, tone: "stable", kind: "training" as const, icon: UsersRound, reason: "training_gap" as const },
+  { id: "ipc-precaution-review", label: "Transmission-based precaution review", count: 2, tone: "urgent", priority: "high" as const, kind: "precaution" as const, icon: Siren, reason: "coverage_gap" as const },
+  { id: "ipc-surface-verification", label: "High-touch surface verification", count: 4, tone: "watch", priority: "medium" as const, kind: "cleaning" as const, icon: Droplets, reason: "environmental_cleaning" as const },
+  { id: "ipc-refresher-training", label: "Frontline refresher training", count: 1, tone: "stable", priority: "low" as const, kind: "training" as const, icon: UsersRound, reason: "training_gap" as const },
 ];
 
 type IpcTaskReason = "coverage_gap" | "ppe_readiness" | "environmental_cleaning" | "training_gap";
+type IpcTaskPriority = "high" | "medium" | "low";
+type IpcQueuePreset = { id: string; name: string; search: string; reasonFilter: "all" | IpcTaskReason; prioritySort: "none" | "high_to_low" | "low_to_high" };
+const IPC_PRIORITY_LABELS: Record<IpcTaskPriority, string> = { high: "High", medium: "Medium", low: "Low" };
+const IPC_PRIORITY_RANK: Record<IpcTaskPriority, number> = { high: 3, medium: 2, low: 1 };
+const IPC_PRESETS_STORAGE_KEY = "gemini-ops-ipc-queue-presets";
 type IpcTrendPoint = { dateKey: string; label: string; openTasks: number; urgentTasks: number; watchTasks: number; stableTasks: number; completedTasks: number; escalations: number; dismissals: number };
- type InfectionControlData = { signals: IpcSignal[]; tasks: Array<{ id: string; label: string; count: number; tone: "urgent" | "watch" | "stable"; kind: "precaution" | "cleaning" | "training"; reason: IpcTaskReason }>; safety: { syntheticOnly: boolean; autonomousDeclarations: boolean; humanApprovalRequired: boolean }; trends: { source: "synthetic_facility"; daily: IpcTrendPoint[]; weekly: IpcTrendPoint[] } };
+type InfectionControlData = { signals: IpcSignal[]; tasks: Array<{ id: string; label: string; count: number; tone: "urgent" | "watch" | "stable"; priority: IpcTaskPriority; kind: "precaution" | "cleaning" | "training"; reason: IpcTaskReason }>; safety: { syntheticOnly: boolean; autonomousDeclarations: boolean; humanApprovalRequired: boolean }; trends: { source: "synthetic_facility"; daily: IpcTrendPoint[]; weekly: IpcTrendPoint[] } };
 const IPC_REASON_LABELS: Record<IpcTaskReason, string> = { coverage_gap: "Coverage gap", ppe_readiness: "PPE readiness", environmental_cleaning: "Environmental cleaning", training_gap: "Training gap" };
 
-function IpcTrendPanel({ trends }: { trends?: InfectionControlData["trends"] }) {
+function IpcTrendPanel({ fallbackTrends }: { fallbackTrends?: InfectionControlData["trends"] }) {
   const [range, setRange] = useState<"daily" | "weekly">("daily");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const panelRef = useRef<HTMLDivElement>(null);
+  const availableTrends = fallbackTrends;
+  const boundsSeries = availableTrends?.[range] || [];
+  const trendQuery = trpc.fleet.infectionControlTrends.useQuery({ from: dateFrom || undefined, to: dateTo || undefined });
+  const trends = trendQuery.data || fallbackTrends;
   const series = trends?.[range] || [];
-  useEffect(() => { if (series.length) { setDateFrom(series[0].dateKey); setDateTo(series[series.length - 1].dateKey); } }, [range, trends]);
-  const points = useMemo(() => series.filter((point) => (!dateFrom || point.dateKey >= dateFrom) && (!dateTo || point.dateKey <= dateTo)), [series, dateFrom, dateTo]);
-  const resetDates = () => { if (series.length) { setDateFrom(series[0].dateKey); setDateTo(series[series.length - 1].dateKey); } };
+
+  useEffect(() => {
+    if (boundsSeries.length && !dateFrom && !dateTo) {
+      setDateFrom(boundsSeries[0].dateKey);
+      setDateTo(boundsSeries[boundsSeries.length - 1].dateKey);
+    }
+  }, [boundsSeries, dateFrom, dateTo]);
+
+  const points = useMemo(
+    () => series.filter((point) => (!dateFrom || point.dateKey >= dateFrom) && (!dateTo || point.dateKey <= dateTo)),
+    [series, dateFrom, dateTo],
+  );
+
+  const selectRange = (nextRange: "daily" | "weekly") => {
+    const nextSeries = availableTrends?.[nextRange] || [];
+    setRange(nextRange);
+    if (nextSeries.length) {
+      setDateFrom(nextSeries[0].dateKey);
+      setDateTo(nextSeries[nextSeries.length - 1].dateKey);
+    }
+  };
+
+  const resetDates = () => {
+    if (boundsSeries.length) {
+      setDateFrom(boundsSeries[0].dateKey);
+      setDateTo(boundsSeries[boundsSeries.length - 1].dateKey);
+    }
+  };
+
   const exportChart = async (format: "png" | "pdf") => {
-    if (!panelRef.current || !points.length) { toast.error("No chart data to export", { description: "Choose a date range containing trend samples." }); return; }
+    if (!panelRef.current || !points.length) {
+      toast.error("No chart data to export", { description: "Choose a date range containing trend samples." });
+      return;
+    }
     try {
       const dataUrl = await toPng(panelRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: "#fbfaf6" });
       const filename = `gemini-ops-ipc-trends-${range}-${dateFrom || "start"}-${dateTo || "end"}`;
-      if (format === "png") { const link = document.createElement("a"); link.download = `${filename}.png`; link.href = dataUrl; link.click(); }
-      else { const bounds = panelRef.current.getBoundingClientRect(); const pdf = new jsPDF({ orientation: bounds.width >= bounds.height ? "landscape" : "portrait", unit: "px", format: [bounds.width, bounds.height] }); pdf.addImage(dataUrl, "PNG", 0, 0, bounds.width, bounds.height); pdf.save(`${filename}.pdf`); }
+      if (format === "png") {
+        const link = document.createElement("a");
+        link.download = `${filename}.png`;
+        link.href = dataUrl;
+        link.click();
+      } else {
+        const bounds = panelRef.current.getBoundingClientRect();
+        const pdf = new jsPDF({ orientation: bounds.width >= bounds.height ? "landscape" : "portrait", unit: "px", format: [bounds.width, bounds.height] });
+        pdf.addImage(dataUrl, "PNG", 0, 0, bounds.width, bounds.height);
+        pdf.save(`${filename}.pdf`);
+      }
       toast.success(`${format.toUpperCase()} chart exported`, { description: `${points.length} ${range} trend samples included.` });
-    } catch (error) { toast.error("Chart export failed", { description: error instanceof Error ? error.message : "Please try again." }); }
+    } catch (error) {
+      toast.error("Chart export failed", { description: error instanceof Error ? error.message : "Please try again." });
+    }
   };
-  return <div ref={panelRef} className="ledger-card mt-5 overflow-hidden"><div className="flex flex-wrap items-start justify-between gap-3 border-b border-line p-5"><div><Eyebrow>IPC OPERATIONS / {range.toUpperCase()}</Eyebrow><h2 className="admin-card-title">Task queue trends</h2><p className="mt-1 text-sm text-slate-500">Synthetic facility workload history keeps open tasks, completions, and human decisions visible.</p></div><div className="flex flex-wrap items-center justify-end gap-2"><span className="state-pill pill-amber">Synthetic trend</span><div className="flex rounded-lg border border-line bg-paper p-1"><button className={`trend-toggle ${range === "daily" ? "active" : ""}`} onClick={() => setRange("daily")}>Daily</button><button className={`trend-toggle ${range === "weekly" ? "active" : ""}`} onClick={() => setRange("weekly")}>Weekly</button></div></div></div><div className="flex flex-wrap items-end gap-2 border-b border-line bg-paper/50 p-4"><label className="date-control"><span>From</span><input type="date" value={dateFrom} max={dateTo || undefined} onChange={(event) => setDateFrom(event.target.value)} /></label><label className="date-control"><span>To</span><input type="date" value={dateTo} min={dateFrom || undefined} onChange={(event) => setDateTo(event.target.value)} /></label><button className="quiet-button compact" onClick={resetDates}>Reset range</button><div className="ml-auto flex flex-wrap gap-2"><button className="quiet-button compact" onClick={() => void exportChart("png")} disabled={!points.length}><Download size={14} /> PNG</button><button className="quiet-button compact" onClick={() => void exportChart("pdf")} disabled={!points.length}><Download size={14} /> PDF</button></div>{dateFrom && dateTo && dateFrom > dateTo && <p className="basis-full text-xs text-coral">The start date must be on or before the end date.</p>}</div><div className="grid gap-5 p-5 lg:grid-cols-2"><div className="min-w-0"><div className="mb-3 flex items-center justify-between"><div><Eyebrow>QUEUE LOAD</Eyebrow><p className="text-sm font-semibold text-ink">Open vs completed tasks</p></div><ClipboardCheck size={17} className="text-teal" /></div><div className="h-56 w-full">{points.length ? <ResponsiveContainer width="100%" height="100%" minWidth={250}><LineChart data={points}><CartesianGrid stroke="#e7e5dc" strokeDasharray="3 3" /><XAxis dataKey="label" tick={{ fontSize: 10 }} /><YAxis allowDecimals={false} width={30} tick={{ fontSize: 10 }} /><Tooltip contentStyle={{ borderRadius: 8, borderColor: "#d9d8cf", fontSize: 12 }} /><Legend wrapperStyle={{ fontSize: 11 }} /><Line type="monotone" dataKey="openTasks" name="Open" stroke="#c6534b" strokeWidth={2.5} dot={false} isAnimationActive={false} /><Line type="monotone" dataKey="completedTasks" name="Completed" stroke="#087f73" strokeWidth={2.5} dot={false} isAnimationActive={false} /></LineChart></ResponsiveContainer> : <div className="flex h-full items-center justify-center text-sm text-slate-400">No trend samples in this range.</div>}</div></div><div className="min-w-0"><div className="mb-3 flex items-center justify-between"><div><Eyebrow>HUMAN DECISIONS</Eyebrow><p className="text-sm font-semibold text-ink">Escalations vs dismissals</p></div><ShieldCheck size={17} className="text-amber-700" /></div><div className="h-56 w-full">{points.length ? <ResponsiveContainer width="100%" height="100%" minWidth={250}><LineChart data={points}><CartesianGrid stroke="#e7e5dc" strokeDasharray="3 3" /><XAxis dataKey="label" tick={{ fontSize: 10 }} /><YAxis allowDecimals={false} width={30} tick={{ fontSize: 10 }} /><Tooltip contentStyle={{ borderRadius: 8, borderColor: "#d9d8cf", fontSize: 12 }} /><Legend wrapperStyle={{ fontSize: 11 }} /><Line type="monotone" dataKey="escalations" name="Escalated" stroke="#b7791f" strokeWidth={2.5} dot={false} isAnimationActive={false} /><Line type="monotone" dataKey="dismissals" name="Dismissed" stroke="#64748b" strokeWidth={2.5} dot={false} isAnimationActive={false} /></LineChart></ResponsiveContainer> : <div className="flex h-full items-center justify-center text-sm text-slate-400">No trend samples in this range.</div>}</div></div></div></div>;
+
+  const controls = (
+    <div className="flex flex-wrap items-end gap-2 border-b border-line bg-paper/50 p-4">
+      <label className="date-control"><span>From</span><input type="date" value={dateFrom} max={dateTo || undefined} onChange={(event) => setDateFrom(event.target.value)} /></label>
+      <label className="date-control"><span>To</span><input type="date" value={dateTo} min={dateFrom || undefined} onChange={(event) => setDateTo(event.target.value)} /></label>
+      <button className="quiet-button compact" onClick={resetDates}>Reset range</button>
+      <div className="ml-auto flex flex-wrap gap-2">
+        <button className="quiet-button compact" onClick={() => void exportChart("png")} disabled={!points.length}><Download size={14} /> PNG</button>
+        <button className="quiet-button compact" onClick={() => void exportChart("pdf")} disabled={!points.length}><Download size={14} /> PDF</button>
+      </div>
+      {dateFrom && dateTo && dateFrom > dateTo && <p className="basis-full text-xs text-coral">The start date must be on or before the end date.</p>}
+    </div>
+  );
+
+  return (
+    <div ref={panelRef} className="ledger-card mt-5 overflow-hidden">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line p-5">
+        <div><Eyebrow>IPC OPERATIONS / {range.toUpperCase()}</Eyebrow><h2 className="admin-card-title">Task queue trends</h2><p className="mt-1 text-sm text-slate-500">Synthetic facility workload history keeps open tasks, completions, and human decisions visible.</p></div>
+        <div className="flex flex-wrap items-center justify-end gap-2"><span className="state-pill pill-amber">Synthetic trend</span><div className="flex rounded-lg border border-line bg-paper p-1"><button className={`trend-toggle ${range === "daily" ? "active" : ""}`} onClick={() => selectRange("daily")}>Daily</button><button className={`trend-toggle ${range === "weekly" ? "active" : ""}`} onClick={() => selectRange("weekly")}>Weekly</button></div></div>
+      </div>
+      {controls}
+      <div className="grid gap-5 p-5 lg:grid-cols-2">
+        {trendQuery.isLoading ? <><IpcChartSkeleton label="Loading queue load trend" /><IpcChartSkeleton label="Loading human decision trend" /></> : <>
+          <div className="min-w-0"><div className="mb-3 flex items-center justify-between"><div><Eyebrow>QUEUE LOAD</Eyebrow><p className="text-sm font-semibold text-ink">Open vs completed tasks</p></div><ClipboardCheck size={17} className="text-teal" /></div><div className="h-56 w-full">{points.length ? <ResponsiveContainer width="100%" height="100%" minWidth={250}><LineChart data={points}><CartesianGrid stroke="#e7e5dc" strokeDasharray="3 3" /><XAxis dataKey="label" tick={{ fontSize: 10 }} /><YAxis allowDecimals={false} width={30} tick={{ fontSize: 10 }} /><Tooltip contentStyle={{ borderRadius: 8, borderColor: "#d9d8cf", fontSize: 12 }} /><Legend wrapperStyle={{ fontSize: 11 }} /><Line type="monotone" dataKey="openTasks" name="Open" stroke="#c6534b" strokeWidth={2.5} dot={false} isAnimationActive={false} /><Line type="monotone" dataKey="completedTasks" name="Completed" stroke="#087f73" strokeWidth={2.5} dot={false} isAnimationActive={false} /></LineChart></ResponsiveContainer> : <div className="flex h-full items-center justify-center text-sm text-slate-400">No trend samples in this range.</div>}</div></div>
+          <div className="min-w-0"><div className="mb-3 flex items-center justify-between"><div><Eyebrow>HUMAN DECISIONS</Eyebrow><p className="text-sm font-semibold text-ink">Escalations vs dismissals</p></div><ShieldCheck size={17} className="text-amber-700" /></div><div className="h-56 w-full">{points.length ? <ResponsiveContainer width="100%" height="100%" minWidth={250}><LineChart data={points}><CartesianGrid stroke="#e7e5dc" strokeDasharray="3 3" /><XAxis dataKey="label" tick={{ fontSize: 10 }} /><YAxis allowDecimals={false} width={30} tick={{ fontSize: 10 }} /><Tooltip contentStyle={{ borderRadius: 8, borderColor: "#d9d8cf", fontSize: 12 }} /><Legend wrapperStyle={{ fontSize: 11 }} /><Line type="monotone" dataKey="escalations" name="Escalated" stroke="#b7791f" strokeWidth={2.5} dot={false} isAnimationActive={false} /><Line type="monotone" dataKey="dismissals" name="Dismissed" stroke="#64748b" strokeWidth={2.5} dot={false} isAnimationActive={false} /></LineChart></ResponsiveContainer> : <div className="flex h-full items-center justify-center text-sm text-slate-400">No trend samples in this range.</div>}</div></div>
+        </>}
+      </div>
+    </div>
+  );
 }
 
+function IpcChartSkeleton({ label }: { label: string }) { return <div className="min-w-0" aria-label={label}><div className="mb-3 flex items-center justify-between"><div className="skeleton-line wide" /><div className="skeleton-dot" /></div><div className="chart-skeleton"><div className="skeleton-chart-line one" /><div className="skeleton-chart-line two" /><div className="skeleton-chart-line three" /></div></div>; }
+
 function InfectionControl({ onNavigate, data, canReview, audit, onTransition }: { onNavigate: (tab: TabId) => void; data?: InfectionControlData; canReview: boolean; audit: AuditEntry[]; onTransition: (signal: string, action: "verify" | "escalate" | "dismiss", reason?: string) => Promise<void> }) {
-  const trendQuery = trpc.fleet.infectionControlTrends.useQuery();
   const [lowResource, setLowResource] = useState(false);
   const [selected, setSelected] = useState<IpcSignal | null>(null);
   const [decisionReason, setDecisionReason] = useState("");
   const [reasonFilter, setReasonFilter] = useState<"all" | IpcTaskReason>("all");
   const [taskSearch, setTaskSearch] = useState("");
+  const [prioritySort, setPrioritySort] = useState<"none" | "high_to_low" | "low_to_high">("high_to_low");
+  const [presets, setPresets] = useState<IpcQueuePreset[]>(() => { try { return JSON.parse(localStorage.getItem(IPC_PRESETS_STORAGE_KEY) || "[]") as IpcQueuePreset[]; } catch { return []; } });
   useEffect(() => { setDecisionReason(""); }, [selected?.signal]);
   const signals = data?.signals || ipcSignals;
   const tasks = data?.tasks || ipcTasks;
-  const filteredTasks = useMemo(() => { const query = taskSearch.trim().toLowerCase(); return tasks.filter((task) => (reasonFilter === "all" || task.reason === reasonFilter) && (!query || `${task.id} ${task.label} ${task.reason} ${IPC_REASON_LABELS[task.reason]}`.toLowerCase().includes(query))); }, [reasonFilter, taskSearch, tasks]);
+  const persistPresets = (next: IpcQueuePreset[]) => { setPresets(next); localStorage.setItem(IPC_PRESETS_STORAGE_KEY, JSON.stringify(next)); };
+  const savePreset = () => { const name = window.prompt("Name this IPC queue preset"); if (!name?.trim()) return; persistPresets([...presets, { id: crypto.randomUUID(), name: name.trim(), search: taskSearch, reasonFilter, prioritySort }]); toast.success("Queue preset saved", { description: "Your current search, reason, and priority sort are ready for quick access." }); };
+  const applyPreset = (id: string) => { const preset = presets.find((item) => item.id === id); if (!preset) return; setTaskSearch(preset.search); setReasonFilter(preset.reasonFilter); setPrioritySort(preset.prioritySort); };
+  const filteredTasks = useMemo(() => { const query = taskSearch.trim().toLowerCase(); const filtered = tasks.filter((task) => (reasonFilter === "all" || task.reason === reasonFilter) && (!query || `${task.id} ${task.label} ${task.reason} ${IPC_REASON_LABELS[task.reason]}`.toLowerCase().includes(query))); return prioritySort === "none" ? filtered : [...filtered].sort((a, b) => (IPC_PRIORITY_RANK[b.priority] - IPC_PRIORITY_RANK[a.priority]) * (prioritySort === "high_to_low" ? 1 : -1)); }, [reasonFilter, taskSearch, prioritySort, tasks]);
   const visibleSignals = lowResource ? signals.filter((item) => item.level !== "stable") : signals;
   return <>
     <div className="hero-panel">
@@ -245,9 +331,9 @@ function InfectionControl({ onNavigate, data, canReview, audit, onTransition }: 
       <div className="hero-graphic flex items-center justify-center"><div className="text-center"><ShieldAlert size={42} className="mx-auto text-teal" /><p className="eyebrow mt-4">NO AUTONOMOUS DECLARATIONS</p><p className="mt-2 text-sm text-slate-600">Signals require verification before escalation.</p></div></div>
     </div>
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-white/75 p-4"><div><Eyebrow>OPERATING MODE</Eyebrow><p className="mt-1 text-sm text-slate-600">Low-resource mode keeps the queue focused on the few actions a small team can complete today.</p></div><button className={lowResource ? "primary-button" : "quiet-button"} onClick={() => setLowResource((value) => !value)}>{lowResource ? <><Check size={15} /> Low-resource mode on</> : <><WifiOff size={15} /> Enable low-resource mode</>}</button></div>
-    <IpcTrendPanel trends={trendQuery.data || data?.trends} />
+    <IpcTrendPanel fallbackTrends={data?.trends} />
     <div className="metrics-grid"><Metric label="Wards reporting" value="3/3" note="Last signal received within 60 min" icon={Activity} /><Metric label="Needs verification" value={visibleSignals.filter((item) => item.level === "urgent").length} note="No escalation without evidence" tone="coral" icon={Siren} /><Metric label="Open IPC tasks" value="7" note="Assigned to named owners" tone="amber" icon={ClipboardCheck} /><Metric label="Resource gaps" value="2" note="Visible instead of silently inferred" tone="ink" icon={UsersRound} /></div>
-    <div className="overview-grid"><div className="ledger-card"><SectionHeading eyebrow="WARD SIGNALS" title="Where attention is needed" description="Synthetic observations are operational prompts, not diagnoses." /><div className="space-y-3">{visibleSignals.map((item) => <button key={item.ward} className="w-full rounded-2xl border border-line bg-paper/60 p-4 text-left transition hover:border-teal/50" onClick={() => setSelected(item)}><div className="flex items-start justify-between gap-3"><div><p className="eyebrow">{item.ward}</p><h3 className="mt-1 font-semibold text-ink">{item.signal}</h3></div><span className={`state-pill ${item.level === "urgent" ? "pill-coral" : item.level === "watch" ? "pill-amber" : "pill-teal"}`}>{item.level}</span></div><p className="mt-3 text-sm text-slate-600">{item.evidence}</p><div className="mt-3 flex flex-wrap gap-2"><span className="tag">Fresh {item.freshness}</span><span className="tag">Owner · {item.owner}</span><span className="tag">{item.resource}</span></div></button>)}</div></div><div className="ledger-card"><SectionHeading eyebrow="IPC QUEUE" title="Small-team worklist" description="Prioritized tasks preserve human ownership." action={<div className="flex flex-wrap gap-2"><label className="ipc-task-search"><span className="sr-only">Search IPC tasks by ID or keyword</span><Search size={14} /><input value={taskSearch} onChange={(event) => setTaskSearch(event.target.value)} placeholder="Search ID or keyword" aria-label="Search IPC tasks by ID or keyword" /></label><label className="grid gap-1"><span className="sr-only">Filter by escalation reason</span><select className="queue-select" value={reasonFilter} onChange={(event) => setReasonFilter(event.target.value as "all" | IpcTaskReason)} aria-label="Filter IPC tasks by escalation reason"><option value="all">All escalation reasons</option>{Object.entries(IPC_REASON_LABELS).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label><button className="quiet-button compact" onClick={() => downloadIpcTaskCsv(filteredTasks)} disabled={!filteredTasks.length}><Download size={14} /> Export filtered queue</button><button className="quiet-button compact" onClick={() => downloadAuditCsv(audit)}><Download size={14} /> Export audit CSV</button></div>} /><div className="space-y-3">{filteredTasks.map((task) => { const Icon = task.kind === "precaution" ? Siren : task.kind === "cleaning" ? Droplets : UsersRound; return <div className="flex items-center gap-3 rounded-xl border border-line bg-white/70 p-3" key={task.id}><div className="rounded-lg bg-teal/10 p-2 text-teal"><Icon size={16} /></div><div className="min-w-0 flex-1"><p className="text-sm font-semibold text-ink">{task.label}</p><p className="mt-1 text-xs text-slate-500">{task.id} · {IPC_REASON_LABELS[task.reason]} · no automatic escalation</p></div><span className={`state-pill ${task.tone === "urgent" ? "pill-coral" : task.tone === "watch" ? "pill-amber" : "pill-teal"}`}>{task.count}</span></div>; })}</div><button className="quiet-button mt-5 w-full" onClick={() => onNavigate("audit")}><ShieldCheck size={15} /> Review IPC audit trail</button></div></div>
+    <div className="overview-grid"><div className="ledger-card"><SectionHeading eyebrow="WARD SIGNALS" title="Where attention is needed" description="Synthetic observations are operational prompts, not diagnoses." /><div className="space-y-3">{visibleSignals.map((item) => <button key={item.ward} className="w-full rounded-2xl border border-line bg-paper/60 p-4 text-left transition hover:border-teal/50" onClick={() => setSelected(item)}><div className="flex items-start justify-between gap-3"><div><p className="eyebrow">{item.ward}</p><h3 className="mt-1 font-semibold text-ink">{item.signal}</h3></div><span className={`state-pill ${item.level === "urgent" ? "pill-coral" : item.level === "watch" ? "pill-amber" : "pill-teal"}`}>{item.level}</span></div><p className="mt-3 text-sm text-slate-600">{item.evidence}</p><div className="mt-3 flex flex-wrap gap-2"><span className="tag">Fresh {item.freshness}</span><span className="tag">Owner · {item.owner}</span><span className="tag">{item.resource}</span></div></button>)}</div></div><div className="ledger-card"><SectionHeading eyebrow="IPC QUEUE" title="Small-team worklist" description="Prioritized tasks preserve human ownership." action={<div className="flex flex-wrap gap-2"><label className="ipc-task-search"><span className="sr-only">Search IPC tasks by ID or keyword</span><Search size={14} /><input value={taskSearch} onChange={(event) => setTaskSearch(event.target.value)} placeholder="Search ID or keyword" aria-label="Search IPC tasks by ID or keyword" /></label><select className="queue-select" value={reasonFilter} onChange={(event) => setReasonFilter(event.target.value as "all" | IpcTaskReason)} aria-label="Filter IPC tasks by escalation reason"><option value="all">All escalation reasons</option>{Object.entries(IPC_REASON_LABELS).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><select className="queue-select" value={prioritySort} onChange={(event) => setPrioritySort(event.target.value as typeof prioritySort)} aria-label="Sort IPC tasks by priority"><option value="high_to_low">Priority: High to low</option><option value="low_to_high">Priority: Low to high</option><option value="none">Priority: Original order</option></select><select className="queue-select" defaultValue="" onChange={(event) => { if (event.target.value) applyPreset(event.target.value); }} aria-label="Apply saved IPC queue preset"><option value="">Saved presets</option>{presets.map((preset) => <option value={preset.id} key={preset.id}>{preset.name}</option>)}</select><button className="quiet-button compact" onClick={savePreset}><Bookmark size={14} /> Save preset</button><button className="quiet-button compact" onClick={() => downloadIpcTaskCsv(filteredTasks)} disabled={!filteredTasks.length}><Download size={14} /> Export filtered queue</button><button className="quiet-button compact" onClick={() => downloadAuditCsv(audit)}><Download size={14} /> Export audit CSV</button></div>} /><div className="space-y-3">{filteredTasks.map((task) => { const Icon = task.kind === "precaution" ? Siren : task.kind === "cleaning" ? Droplets : UsersRound; const priorityClass = task.priority === "high" ? "priority-high" : task.priority === "medium" ? "priority-medium" : "priority-low"; return <div className="flex items-center gap-3 rounded-xl border border-line bg-white/70 p-3" key={task.id}><div className="rounded-lg bg-teal/10 p-2 text-teal"><Icon size={16} /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold text-ink">{task.label}</p><span className={`ipc-priority-badge ${priorityClass}`}>{IPC_PRIORITY_LABELS[task.priority]}</span></div><p className="mt-1 text-xs text-slate-500">{task.id} · {IPC_REASON_LABELS[task.reason]} · no automatic escalation</p></div><span className={`state-pill ${task.tone === "urgent" ? "pill-coral" : task.tone === "watch" ? "pill-amber" : "pill-teal"}`}>{task.count}</span></div>; })}</div><button className="quiet-button mt-5 w-full" onClick={() => onNavigate("audit")}><ShieldCheck size={15} /> Review IPC audit trail</button></div></div>
     {selected && <div className="drawer-backdrop" onClick={() => setSelected(null)}><aside className="approval-drawer" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between gap-4 border-b border-line p-6"><div><Eyebrow>IPC EVIDENCE · SYNTHETIC</Eyebrow><h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink">{selected.signal}</h2><p className="mt-2 text-sm text-slate-500">{selected.ward}</p></div><button className="icon-button" onClick={() => setSelected(null)} aria-label="Close evidence"><X size={18} /></button></div><div className="space-y-5 overflow-y-auto p-6"><div className="drawer-callout"><AlertTriangle size={17} /><div><p className="font-semibold text-ink">Verify before acting</p><p className="mt-1 text-sm text-slate-600">This signal is an operational prompt. It does not declare an infection or replace local IPC judgment.</p></div></div><div><Eyebrow>OBSERVED EVIDENCE</Eyebrow><p className="mt-2 text-sm leading-6 text-slate-600">{selected.evidence}</p></div><div><Eyebrow>PROPOSED NEXT CHECK</Eyebrow><p className="mt-2 text-sm leading-6 text-slate-600">{selected.action}</p></div><div><Eyebrow>VISIBLE CONSTRAINT</Eyebrow><p className="mt-2 text-sm leading-6 text-slate-600">{selected.resource}</p></div><div className="drawer-permission"><LockKeyhole size={15} /><span>Any escalation, external notice, or policy change remains behind an authenticated human approval gate.</span></div>{canReview ? <><label className="grid gap-2"><span className="eyebrow">DECISION REASON · REQUIRED FOR ESCALATE / DISMISS</span><textarea className="reason-input" rows={4} value={decisionReason} onChange={(event) => setDecisionReason(event.target.value)} placeholder="Document the evidence, local constraint, or verification outcome." /></label><div className="grid gap-2 sm:grid-cols-3"><button className="primary-button compact" onClick={() => { void onTransition(selected.signal, "verify"); setSelected(null); }}><Check size={15} /> Verify</button><button className="quiet-button compact" disabled={!decisionReason.trim()} onClick={() => { void onTransition(selected.signal, "escalate", decisionReason.trim()); setSelected(null); }}><ShieldAlert size={15} /> Escalate</button><button className="danger-button compact" disabled={!decisionReason.trim()} onClick={() => { void onTransition(selected.signal, "dismiss", decisionReason.trim()); setSelected(null); }}><XCircle size={15} /> Dismiss</button></div></> : <div className="drawer-permission"><LockKeyhole size={15} /><span>Your server-derived role can inspect this signal but cannot record the human-gate decision.</span></div>}</div></aside></div>}
   </>;
 }
@@ -354,11 +440,11 @@ function downloadApprovalCsv(rows: Approval[]) {
   toast.success("Approval CSV exported", { description: `${rows.length} filtered request${rows.length === 1 ? "" : "s"} included.` });
 }
 
-function downloadIpcTaskCsv(tasks: Array<{ id: string; label: string; count: number; tone: string; kind: string; reason: string }>) {
+function downloadIpcTaskCsv(tasks: Array<{ id: string; label: string; count: number; tone: string; priority: IpcTaskPriority; kind: string; reason: string }>) {
   const headers = ["task_id", "task", "count", "priority", "kind", "escalation_reason", "exported_at"];
   const escape = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""').replace(/\n/g, " ")}"`;
   const exportedAt = new Date().toISOString();
-  const csv = [headers.join(","), ...tasks.map((task) => [task.id, task.label, task.count, task.tone, task.kind, IPC_REASON_LABELS[task.reason as IpcTaskReason] || task.reason, exportedAt].map(escape).join(","))].join("\n");
+  const csv = [headers.join(","), ...tasks.map((task) => [task.id, task.label, task.count, IPC_PRIORITY_LABELS[task.priority], task.kind, IPC_REASON_LABELS[task.reason as IpcTaskReason] || task.reason, exportedAt].map(escape).join(","))].join("\n");
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   const anchor = document.createElement("a"); anchor.href = url; anchor.download = `gemini-ops-ipc-queue-${exportedAt.slice(0, 10)}.csv`; anchor.click(); URL.revokeObjectURL(url);
   toast.success("IPC queue CSV exported", { description: `${tasks.length} open task${tasks.length === 1 ? "" : "s"} included.` });

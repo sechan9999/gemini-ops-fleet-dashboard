@@ -75,3 +75,13 @@ The chart panel can be downloaded as a PNG or PDF snapshot. Exports include the 
 The IPC task queue now exposes stable task IDs and a keyword search field. Search matches task IDs, task names, reason codes, and human-readable escalation reasons, and combines with the existing reason selector. CSV export continues to include only the currently filtered tasks and now includes `task_id`.
 
 Validation for this increment passed with 20 Vitest tests, TypeScript, production build, desktop visual verification, and narrow mobile visual verification after a responsive Recharts sizing adjustment.
+
+## Latest IPC Queue Workflow Enhancements
+
+The IPC task queue now supports named, browser-persisted presets for the current keyword search, escalation-reason filter, and priority sort. Operators can save a combination and reapply it from the queue toolbar for repeat investigations without rebuilding the filters manually.
+
+IPC tasks now carry explicit high, medium, or low priority. The queue presents color-coded priority badges, supports high-to-low, low-to-high, and original-order sorting, and includes the priority value in filtered CSV exports.
+
+The protected trend procedure accepts optional ISO date bounds. While a custom date-range request is loading, the visual dashboard presents two responsive chart skeletons instead of a blank panel, preserving context for operators.
+
+Validation for this increment passed TypeScript, the existing 20-test Vitest suite, desktop and mobile visual verification, and production build validation.

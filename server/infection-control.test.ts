@@ -28,7 +28,7 @@ describe("infection-control overview", () => {
 
   it("exposes reason-tagged tasks and both daily and weekly operational trends", () => {
     const overview = getInfectionControlOverview();
-    expect(overview.tasks.every(task => task.id && task.reason)).toBe(true);
+    expect(overview.tasks.every(task => task.id && task.reason && ["high", "medium", "low"].includes(task.priority))).toBe(true);
     expect(overview.trends.source).toBe("synthetic_facility");
     expect(overview.trends.daily).toHaveLength(7);
     expect(overview.trends.weekly).toHaveLength(4);

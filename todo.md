@@ -102,3 +102,8 @@
 - [x] Add PNG and PDF export controls for IPC trend charts.
 - [x] Add keyword/ID search to the IPC task queue while preserving reason filtering and filtered CSV export.
 - [x] Test, document, visually verify, and checkpoint the IPC sharing and search upgrade.
+
+- [x] Add saved IPC queue search/filter presets with quick access.
+- [x] Add chart skeleton loading states while custom-range trend data is fetched.
+- [x] Add color-coded IPC task priority badges and priority sorting.
+- [x] Test, document, visually verify, and checkpoint the IPC preset/loading/priority upgrade.

@@ -217,3 +217,19 @@
 
 
 .recharts-responsive-container { min-width: 0; min-height: 220px; }
+
+
+.skeleton-line { height: 10px; width: 140px; border-radius: 999px; background: linear-gradient(90deg, #e9ebe5 25%, #f5f6f1 50%, #e9ebe5 75%); background-size: 200% 100%; animation: ipc-skeleton 1.2s ease-in-out infinite; }
+.skeleton-line.wide { width: 170px; }
+.skeleton-dot { width: 18px; height: 18px; border-radius: 50%; background: #e9ebe5; animation: ipc-skeleton 1.2s ease-in-out infinite; }
+.chart-skeleton { position: relative; height: 224px; overflow: hidden; border: 1px solid #ebece6; border-radius: 10px; background: repeating-linear-gradient(to bottom, transparent 0, transparent 55px, #eceee8 56px), linear-gradient(180deg, #fbfcf9, #f7f8f4); }
+.skeleton-chart-line { position: absolute; height: 9px; border-radius: 999px; background: #e2e8e2; opacity: .9; transform: rotate(-7deg); animation: ipc-skeleton 1.2s ease-in-out infinite; }
+.skeleton-chart-line.one { width: 44%; left: 11%; top: 54%; }
+.skeleton-chart-line.two { width: 34%; left: 42%; top: 39%; transform: rotate(11deg); }
+.skeleton-chart-line.three { width: 27%; right: 9%; top: 51%; transform: rotate(-4deg); }
+.ipc-priority-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 7px; font-family: 'IBM Plex Mono', monospace; font-size: 8px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.priority-high { color: #a8423c; background: #fbe8e5; }
+.priority-medium { color: #986615; background: #fbf0d8; }
+.priority-low { color: #277166; background: #e1f1ec; }
+@keyframes ipc-skeleton { 0%, 100% { background-position: 200% 0; opacity: .72; } 50% { background-position: -100% 0; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .skeleton-line, .skeleton-dot, .skeleton-chart-line { animation: none; } }
