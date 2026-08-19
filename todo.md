@@ -88,3 +88,7 @@
 - [x] Save a new checkpoint after the infection-control transition upgrade.
 - [x] Add focused mutation-boundary tests for IPC role authorization, required reasons, and durable audit recording.
 - [x] Save and record a fresh checkpoint after the IPC transition test remediation.
+- [x] Add required reason capture and protected escalate/dismiss UI actions in the IPC evidence drawer.
+- [x] Add durable hospital IPC policy and alert-threshold settings with admin-only server enforcement.
+- [x] Add CSV exports for the open IPC task queue and completed audit records.
+- [x] Test, document, visually verify, and checkpoint the admin IPC upgrade.

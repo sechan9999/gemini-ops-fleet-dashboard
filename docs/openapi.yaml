@@ -153,6 +153,8 @@ x-trpc-procedures:
     - admin.bulkDryRun
     - admin.updateProfile
     - admin.bulkUpdateProfiles
+    - admin.ipcPolicy
+    - admin.updateIpcPolicy
   inputContracts:
     fleet.approvalsPage: "page, pageSize, state, priority, query, sort"
     fleet.transition: "id, action=approve|reject|send, reason required for reject"
@@ -161,6 +163,11 @@ x-trpc-procedures:
     admin.bulkDryRun: "userIds, dashboardRole, department, initials"
     admin.roleChanges: page, pageSize, query, newRole, from, to
     fleet.infectionControlTransition: signal, action=verify|escalate|dismiss, reason required for escalate or dismiss
+    admin.ipcPolicy: facilityId optional, defaults to default-hospital
+    admin.updateIpcPolicy: facilityId, facilityName, handHygieneWatchPct, handHygieneCriticalPct, evidenceStaleMinutes, ppeStaleHours, urgentNotifications, watchNotifications, lowResourceDefault; critical must be lower than watch
+  exportContracts:
+    ipcQueueCsv: "Browser export of current IPC work queue with task, count, priority, kind, and exported_at columns"
+    auditCsv: "Browser export of filtered audit records with id, actor, role, tool, outcome, detail, and timestamp columns"
 components:
   securitySchemes:
     sessionCookie:

@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addAuditEntry, createOperatorNotification, ensureFleetSeeded, getApprovalRequest, getNotificationPreferences, getOperatorProfile, getUserById, listApprovalRequests, listApprovalRequestsPage, listAuditEntries, listOperatorNotifications, listOperatorProfiles, listRoleChanges, listTelemetry, listOperationalMetricSnapshots, markOperatorNotificationsRead, recordOperationalMetricSnapshot, recordRoleChange, updateApprovalRequest, upsertNotificationPreferences, upsertOperatorProfile } from "./db";
+import { addAuditEntry, createOperatorNotification, ensureFleetSeeded, getApprovalRequest, getNotificationPreferences, getOperatorProfile, getUserById, listApprovalRequests, listApprovalRequestsPage, listAuditEntries, listOperatorNotifications, listOperatorProfiles, listRoleChanges, listTelemetry, listOperationalMetricSnapshots, markOperatorNotificationsRead, recordOperationalMetricSnapshot, recordRoleChange, updateApprovalRequest, upsertIpcPolicy, upsertNotificationPreferences, upsertOperatorProfile, getIpcPolicy } from "./db";
 import { getFleetEventBridgeMetrics } from "./fleet-event-bridge";
 import { getNotificationStreamMetrics } from "./notifications";
 import { getInfectionControlOverview, recordInfectionControlDecision } from "./infection-control";
@@ -87,6 +87,15 @@ export const appRouter = router({
   }),
   admin: router({
     profiles: adminProcedure.query(async () => (await listOperatorProfiles()).map(normalizedProfile)),
+    ipcPolicy: adminProcedure.input(z.object({ facilityId: z.string().min(1).max(80).default("default-hospital") }).optional()).query(async ({ input }) => {
+      const policy = await getIpcPolicy(input?.facilityId || "default-hospital");
+      return policy ? { ...policy, createdAt: policy.createdAt.toISOString(), updatedAt: policy.updatedAt.toISOString() } : null;
+    }),
+    updateIpcPolicy: adminProcedure.input(z.object({ facilityId: z.string().min(1).max(80), facilityName: z.string().min(1).max(180), handHygieneWatchPct: z.number().int().min(1).max(100), handHygieneCriticalPct: z.number().int().min(1).max(100), evidenceStaleMinutes: z.number().int().min(5).max(10080), ppeStaleHours: z.number().int().min(1).max(720), urgentNotifications: z.boolean(), watchNotifications: z.boolean(), lowResourceDefault: z.boolean() })).mutation(async ({ ctx, input }) => {
+      if (input.handHygieneCriticalPct >= input.handHygieneWatchPct) throw new Error("Critical coverage must be lower than watch coverage");
+      const policy = await upsertIpcPolicy({ ...input, updatedBy: ctx.user.name || "Administrator" });
+      return policy ? { ...policy, createdAt: policy.createdAt.toISOString(), updatedAt: policy.updatedAt.toISOString() } : null;
+    }),
     streamMetrics: adminProcedure.input(z.object({ range: z.enum(["1h", "6h", "24h", "7d"]).default("24h") }).optional()).query(async ({ input }) => {
       const range = input?.range || "24h";
       const durationMs = range === "1h" ? 60 * 60 * 1000 : range === "6h" ? 6 * 60 * 60 * 1000 : range === "7d" ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;

@@ -183,3 +183,22 @@ export const operationalMetricSnapshots = mysqlTable("operationalMetricSnapshots
 
 export type OperationalMetricSnapshot = typeof operationalMetricSnapshots.$inferSelect;
 export type InsertOperationalMetricSnapshot = typeof operationalMetricSnapshots.$inferInsert;
+
+export const ipcPolicies = mysqlTable("ipcPolicies", {
+  id: int("id").autoincrement().primaryKey(),
+  facilityId: varchar("facilityId", { length: 80 }).notNull().unique(),
+  facilityName: varchar("facilityName", { length: 180 }).notNull(),
+  handHygieneWatchPct: int("handHygieneWatchPct").notNull().default(80),
+  handHygieneCriticalPct: int("handHygieneCriticalPct").notNull().default(60),
+  evidenceStaleMinutes: int("evidenceStaleMinutes").notNull().default(60),
+  ppeStaleHours: int("ppeStaleHours").notNull().default(24),
+  urgentNotifications: boolean("urgentNotifications").notNull().default(true),
+  watchNotifications: boolean("watchNotifications").notNull().default(true),
+  lowResourceDefault: boolean("lowResourceDefault").notNull().default(false),
+  updatedBy: varchar("updatedBy", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({ facilityNameIdx: index("ipcPolicies_facilityName_idx").on(table.facilityName) }));
+
+export type IpcPolicy = typeof ipcPolicies.$inferSelect;
+export type InsertIpcPolicy = typeof ipcPolicies.$inferInsert;

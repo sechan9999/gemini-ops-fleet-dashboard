@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, gte, lte, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { adminRoleChanges, approvalRequests, auditEntries, fleetAgents, fleetEvents, InsertAdminRoleChange, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertNotificationPreferences, InsertOperatorNotification, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, notificationPreferences, operatorNotifications, operatorProfiles, operationalMetricSnapshots, runtimeTelemetry, users } from "../drizzle/schema";
+import { adminRoleChanges, approvalRequests, auditEntries, fleetAgents, fleetEvents, ipcPolicies, InsertAdminRoleChange, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertIpcPolicy, InsertNotificationPreferences, InsertOperatorNotification, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, notificationPreferences, operatorNotifications, operatorProfiles, operationalMetricSnapshots, runtimeTelemetry, users } from "../drizzle/schema";
 import { publishNotification } from "./notifications";
 import { ENV } from './_core/env';
 
@@ -232,6 +232,24 @@ export async function upsertNotificationPreferences(input: InsertNotificationPre
   if (!db) return undefined;
   await db.insert(notificationPreferences).values(input).onDuplicateKeyUpdate({ set: { roleChanges: input.roleChanges, adminActions: input.adminActions, toastEnabled: input.toastEnabled } });
   return getNotificationPreferences(input.userId);
+}
+
+export async function getIpcPolicy(facilityId = "default-hospital") {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(ipcPolicies).where(eq(ipcPolicies.facilityId, facilityId)).limit(1);
+  if (rows[0]) return rows[0];
+  const seed: InsertIpcPolicy = { facilityId, facilityName: "Community General Hospital" };
+  await db.insert(ipcPolicies).values(seed);
+  const created = await db.select().from(ipcPolicies).where(eq(ipcPolicies.facilityId, facilityId)).limit(1);
+  return created[0];
+}
+
+export async function upsertIpcPolicy(input: InsertIpcPolicy) {
+  const db = await getDb();
+  if (!db) return undefined;
+  await db.insert(ipcPolicies).values(input).onDuplicateKeyUpdate({ set: { facilityName: input.facilityName, handHygieneWatchPct: input.handHygieneWatchPct, handHygieneCriticalPct: input.handHygieneCriticalPct, evidenceStaleMinutes: input.evidenceStaleMinutes, ppeStaleHours: input.ppeStaleHours, urgentNotifications: input.urgentNotifications, watchNotifications: input.watchNotifications, lowResourceDefault: input.lowResourceDefault, updatedBy: input.updatedBy } });
+  return getIpcPolicy(input.facilityId);
 }
 
 export async function listOperatorNotifications(userId: number, limit = 20) {
