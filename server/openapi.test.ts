@@ -18,6 +18,7 @@ describe("OpenAPI document", () => {
     expect(document.components.securitySchemes.fleetEventToken.name).toBe("X-Fleet-Event-Token");
     expect(document.components.securitySchemes.prometheusToken.name).toBe("X-Prometheus-Token");
     expect(document["x-trpc-procedures"].protected).toContain("fleet.approvalsPage");
+    expect(document["x-trpc-procedures"].protected).toContain("fleet.infectionControl");
     expect(document["x-trpc-procedures"].admin).toContain("admin.bulkDryRun");
     expect(document["x-trpc-procedures"].inputContracts["admin.streamMetrics"]).toContain("7d");
   });

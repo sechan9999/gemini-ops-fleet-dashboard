@@ -18,7 +18,7 @@ export function getOpenApiDocument() {
     },
     "x-trpc-procedures": {
       public: ["auth.me", "auth.logout"],
-      protected: ["fleet.profile", "fleet.snapshot", "fleet.approvalsPage", "fleet.notifications", "fleet.markNotificationsRead", "fleet.notificationPreferences", "fleet.updateNotificationPreferences", "fleet.telemetry", "fleet.transition", "fleet.summarize"],
+      protected: ["fleet.profile", "fleet.snapshot", "fleet.approvalsPage", "fleet.notifications", "fleet.markNotificationsRead", "fleet.notificationPreferences", "fleet.updateNotificationPreferences", "fleet.infectionControl", "fleet.infectionControlTransition", "fleet.telemetry", "fleet.transition", "fleet.summarize"],
       admin: ["admin.profiles", "admin.streamMetrics", "admin.roleChanges", "admin.bulkDryRun", "admin.updateProfile", "admin.bulkUpdateProfiles"],
       inputContracts: {
         "fleet.approvalsPage": "page, pageSize, state, priority, query, sort",
@@ -26,7 +26,8 @@ export function getOpenApiDocument() {
         "fleet.summarize": "id",
         "admin.streamMetrics": "range=1h|6h|24h|7d",
         "admin.bulkDryRun": "userIds, dashboardRole, department, initials",
-        "admin.roleChanges": "page, pageSize, query, newRole, from, to"
+        "admin.roleChanges": "page, pageSize, query, newRole, from, to",
+        "fleet.infectionControlTransition": "signal, action=verify|escalate|dismiss, reason required for escalate or dismiss"
       }
     },
     components: {

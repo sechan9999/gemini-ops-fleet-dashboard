@@ -141,6 +141,8 @@ x-trpc-procedures:
     - fleet.markNotificationsRead
     - fleet.notificationPreferences
     - fleet.updateNotificationPreferences
+    - fleet.infectionControl
+    - fleet.infectionControlTransition
     - fleet.telemetry
     - fleet.transition
     - fleet.summarize
@@ -157,7 +159,8 @@ x-trpc-procedures:
     fleet.summarize: "id"
     admin.streamMetrics: "range=1h|6h|24h|7d"
     admin.bulkDryRun: "userIds, dashboardRole, department, initials"
-    admin.roleChanges: "page, pageSize, query, newRole, from, to"
+    admin.roleChanges: page, pageSize, query, newRole, from, to
+    fleet.infectionControlTransition: signal, action=verify|escalate|dismiss, reason required for escalate or dismiss
 components:
   securitySchemes:
     sessionCookie:

@@ -80,3 +80,11 @@
 - [x] Add Dockerfile and Docker Compose configuration for local container execution. Docker image build is delegated to CI because Docker is unavailable in the sandbox.
 - [x] Add GitHub Actions CI/CD workflows for tests, type checks, build, and container validation.
 - [x] Validate and push the CI/CD, OpenAPI, and containerization changes to `main`.
+- [x] Define infection-control operational workflows, synthetic data boundaries, and low-resource hospital requirements.
+- [x] Add protected infection-control risk, ward task, and evidence contracts with human-gate transitions.
+- [x] Build the infection-control overview, prioritized queue, ward detail, and low-resource mode UI.
+- [x] Test, document, visually verify, and checkpoint the infection-control upgrade.
+- [x] Add an infection-control-specific protected human-gate transition mutation and focused tests.
+- [x] Save a new checkpoint after the infection-control transition upgrade.
+- [x] Add focused mutation-boundary tests for IPC role authorization, required reasons, and durable audit recording.
+- [x] Save and record a fresh checkpoint after the IPC transition test remediation.

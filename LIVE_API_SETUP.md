@@ -78,3 +78,9 @@ Administrators can inspect the same protected JSON data through `admin.streamMet
 The protected `admin.streamMetrics` procedure accepts `1h`, `6h`, `24h`, or `7d` and returns the current operational counters plus durable `history` points from `operationalMetricSnapshots`. A current sample is captured when an administrator requests the metrics view, allowing the existing five-second admin refresh to build a durable trend without an in-process server timer. The additive migration `0005_free_pixie.sql` creates the snapshot table and captured-time index.
 
 The admin panel renders separate connection and delivery-latency line charts. Latency uses a 500 ms watch threshold and a 1,000 ms critical threshold; dropped clients are healthy at zero, watch when one through four are present, and critical at five or more. The status chips, metric card tones, latency reference lines, and chart stroke all use the same threshold interpretation.
+
+## Infection-control command contract
+
+The protected `fleet.infectionControl` procedure returns synthetic facility-level ward signals and IPC task priorities for the Infection Control command view. Each signal includes a ward, operational observation, freshness, accountable owner, evidence text, proposed verification step, and visible resource constraint. The response also declares `syntheticOnly: true`, `autonomousDeclarations: false`, and `humanApprovalRequired: true`.
+
+The UI supports an explicit low-resource mode that narrows attention to urgent and watch signals. It does not infer that missing data is safe, declare an outbreak, diagnose infection, recommend treatment, or send an external notice. Any escalation or policy change remains behind the existing authenticated human approval and audit boundaries. See `docs/infection-control-product-notes.md` for the product rationale and primary CDC/WHO sources.

@@ -29,6 +29,7 @@ The answer is enforced in server and persistence layers. Operator identity is se
 | **Operator Admin** | Role and department management, distribution charts, bounded bulk editing, dry-run previews, and role-change history. |
 | **Notification Inbox** | Persistent operator notifications, preferences, toast alerts, and authenticated SSE delivery. |
 | **Stream Health** | Connection and delivery-latency charts, selectable time ranges, dropped-client thresholds, and Prometheus metrics. |
+| **IPC Command** | Synthetic ward risk signals, evidence-linked infection-prevention tasks, visible resource gaps, and a low-resource operating mode. |
 
 All healthcare records shown in the demo are synthetic. This is a governance prototype, not a clinical decision system.
 
@@ -105,7 +106,7 @@ The machine-readable OpenAPI specification is available at [`docs/openapi.yaml`]
 | `/api/metrics` | Protected admin or token | JSON operational counters. |
 | `/metrics` | Protected admin or metrics token | Prometheus text exposition. |
 
-See [`LIVE_API_SETUP.md`](LIVE_API_SETUP.md) for integration payloads, token configuration, stream behavior, and metrics names.
+See [`LIVE_API_SETUP.md`](LIVE_API_SETUP.md) for integration payloads, token configuration, stream behavior, metrics names, and the protected `fleet.infectionControl` contract. Product rationale and primary guidance links are in [`docs/infection-control-product-notes.md`](docs/infection-control-product-notes.md).
 
 ## Container execution
 
@@ -143,6 +144,7 @@ The current dashboard has been verified at desktop and mobile sizes, including t
 | `docs/devpost-video-script-en.md` | English four-minute demo narration. |
 | `docs/devpost-video-en.srt` | English subtitles for the demo. |
 | `docs/gemini-ops-fleet-architecture.mmd` | Editable architecture diagram source. |
+| `docs/infection-control-product-notes.md` | Infection-control workflow rationale, safety boundaries, and primary sources. |
 
 ## Safety and scope
 
