@@ -76,3 +76,7 @@
 - [x] Push current project HEAD to `sechan9999/payer-clinical-agents:gemini-ops-fleet-dashboard` without changing existing default branches. Deferred after GitHub returned 403; replaced by new repository push.
 - [x] Create a new private GitHub repository and push the current project main branch.
 - [x] Add Gemini Ops Fleet README and related lightweight documentation/configuration files, then stage, commit, and push them to `main`.
+- [x] Add a verified OpenAPI specification covering the dashboard and fleet integration endpoints.
+- [x] Add Dockerfile and Docker Compose configuration for local container execution. Docker image build is delegated to CI because Docker is unavailable in the sandbox.
+- [x] Add GitHub Actions CI/CD workflows for tests, type checks, build, and container validation.
+- [x] Validate and push the CI/CD, OpenAPI, and containerization changes to `main`.

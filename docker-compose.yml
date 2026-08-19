@@ -1,0 +1,39 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: gemini_ops_fleet
+      MYSQL_USER: gemini
+      MYSQL_PASSWORD: gemini_local_password
+      MYSQL_ROOT_PASSWORD: root_local_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: mysql://gemini:gemini_local_password@db:3306/gemini_ops_fleet
+      JWT_SECRET: local-compose-only-change-me
+      VITE_APP_TITLE: Gemini Ops Fleet
+    command: ["sh", "-c", "pnpm drizzle-kit push --force && node dist/index.js"]
+    ports:
+      - "3000:3000"
+
+volumes:
+  mysql_data:

@@ -1,0 +1,263 @@
+openapi: 3.0.3
+info:
+  title: Gemini Ops Fleet Governance API
+  version: 1.0.0
+  description: >-
+    OpenAPI reference for the governed healthcare agent operations surface,
+    realtime notifications, authenticated FastAPI fleet-event bridge, and
+    Prometheus operational metrics.
+servers:
+  - url: /
+    description: Current deployment origin
+security:
+  - sessionCookie: []
+paths:
+  /healthz:
+    get:
+      summary: Liveness probe
+      operationId: healthz
+      security: []
+      responses:
+        '200':
+          description: Server is running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /openapi.json:
+    get:
+      summary: Retrieve the OpenAPI document
+      operationId: getOpenApiDocument
+      security: []
+      responses:
+        '200':
+          description: OpenAPI document
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/notifications/stream:
+    get:
+      summary: Subscribe to operator notifications
+      description: Authenticated Server-Sent Events stream scoped to the current operator.
+      operationId: notificationStream
+      responses:
+        '200':
+          description: Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/notifications/metrics:
+    get:
+      summary: Read administrator notification metrics
+      operationId: notificationMetrics
+      responses:
+        '200':
+          description: Current stream and fleet-bridge counters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationalMetrics'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/notifications/fleet-events:
+    post:
+      summary: Ingest authenticated production fleet events
+      description: Accepts role and department activity events from the FastAPI publisher.
+      operationId: ingestFleetEvents
+      security:
+        - fleetEventToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FleetEventEnvelope'
+      responses:
+        '202':
+          description: Events accepted for persistence and SSE publication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /metrics:
+    get:
+      summary: Scrape Prometheus operational metrics
+      operationId: prometheusMetrics
+      security:
+        - prometheusToken: []
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Prometheus text exposition
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/trpc:
+    post:
+      summary: Execute typed dashboard procedures
+      description: >-
+        tRPC batch endpoint for protected profile, approval, audit, notification,
+        telemetry, administration, Gemini summary, metrics, and workflow procedures.
+      operationId: trpcBatch
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: tRPC response envelope
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+x-trpc-procedures:
+  public:
+    - auth.me
+    - auth.logout
+  protected:
+    - fleet.profile
+    - fleet.snapshot
+    - fleet.approvalsPage
+    - fleet.notifications
+    - fleet.markNotificationsRead
+    - fleet.notificationPreferences
+    - fleet.updateNotificationPreferences
+    - fleet.telemetry
+    - fleet.transition
+    - fleet.summarize
+  admin:
+    - admin.profiles
+    - admin.streamMetrics
+    - admin.roleChanges
+    - admin.bulkDryRun
+    - admin.updateProfile
+    - admin.bulkUpdateProfiles
+  inputContracts:
+    fleet.approvalsPage: "page, pageSize, state, priority, query, sort"
+    fleet.transition: "id, action=approve|reject|send, reason required for reject"
+    fleet.summarize: "id"
+    admin.streamMetrics: "range=1h|6h|24h|7d"
+    admin.bulkDryRun: "userIds, dashboardRole, department, initials"
+    admin.roleChanges: "page, pageSize, query, newRole, from, to"
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: manus_session
+    fleetEventToken:
+      type: apiKey
+      in: header
+      name: X-Fleet-Event-Token
+    prometheusToken:
+      type: apiKey
+      in: header
+      name: X-Prometheus-Token
+  responses:
+    Unauthorized:
+      description: Authentication or shared-token validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Authenticated operator lacks the required role
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Request payload failed validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, service]
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: gemini-ops-fleet-dashboard
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+    FleetEventEnvelope:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/FleetEvent'
+    FleetEvent:
+      type: object
+      required: [eventId, eventType, occurredAt, operatorId]
+      properties:
+        eventId:
+          type: string
+        eventType:
+          type: string
+          enum: [role_changed, department_changed]
+        occurredAt:
+          type: string
+          format: date-time
+        operatorId:
+          type: string
+        operatorName:
+          type: string
+        beforeRole:
+          type: string
+        afterRole:
+          type: string
+        beforeDepartment:
+          type: string
+        afterDepartment:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+    IngestionResponse:
+      type: object
+      required: [accepted, results]
+      properties:
+        accepted:
+          type: integer
+        results:
+          type: array
+          items:
+            type: object
+    OperationalMetrics:
+      type: object
+      properties:
+        stream:
+          type: object
+          additionalProperties: true
+        fleetBridge:
+          type: object
+          additionalProperties: true

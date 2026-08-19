@@ -11,6 +11,7 @@ import { sdk } from "./sdk";
 import { getNotificationStreamMetrics, heartbeatNotificationStreams, openNotificationStream } from "../notifications";
 import { getFleetEventBridgeMetrics, ingestFleetEvents, isFleetEventTokenValid } from "../fleet-event-bridge";
 import { renderPrometheusMetrics } from "../prometheus";
+import { getOpenApiDocument } from "../openapi";
 import { serveStatic, setupVite } from "./vite";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -40,6 +41,8 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  app.get("/healthz", (_req, res) => res.json({ status: "ok", service: "gemini-ops-fleet-dashboard" }));
+  app.get("/openapi.json", (_req, res) => res.json(getOpenApiDocument()));
   const heartbeat = setInterval(() => heartbeatNotificationStreams(), 25_000);
   heartbeat.unref?.();
   app.get("/api/notifications/stream", async (req, res) => {

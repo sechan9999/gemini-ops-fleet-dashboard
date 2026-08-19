@@ -95,6 +95,8 @@ The browser preview is served by the managed development process. The app uses c
 
 ## API and operational endpoints
 
+The machine-readable OpenAPI specification is available at [`docs/openapi.yaml`](docs/openapi.yaml) and is served at `/openapi.json` when the application is running. It covers health, tRPC, SSE, fleet-event ingestion, JSON metrics, and Prometheus scraping.
+
 | Endpoint | Access | Purpose |
 | --- | --- | --- |
 | `/api/trpc` | Session-protected by procedure | Typed dashboard reads and mutations. |
@@ -104,6 +106,20 @@ The browser preview is served by the managed development process. The app uses c
 | `/metrics` | Protected admin or metrics token | Prometheus text exposition. |
 
 See [`LIVE_API_SETUP.md`](LIVE_API_SETUP.md) for integration payloads, token configuration, stream behavior, and metrics names.
+
+## Container execution
+
+Build and run the application with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+The dashboard is available at `http://localhost:3000`. Compose starts MySQL with a persistent `mysql_data` volume, waits for the database health check, synchronizes the Drizzle schema with `drizzle-kit push --force`, and then starts the app. The local Compose credentials are development-only values; use managed secrets for any shared environment.
+
+## CI/CD
+
+`.github/workflows/ci-cd.yml` runs on pull requests and pushes to `main`. The verification job installs with the pinned pnpm version, runs Vitest, typechecks, and builds the production bundle. A push to `main` then builds the Docker image and publishes immutable SHA and `latest` tags to GitHub Container Registry using the repository's `GITHUB_TOKEN`.
 
 ## Testing and verification
 
