@@ -42,10 +42,10 @@ export function validateInfectionControlTaskUpdate(input: { role?: string; taskI
   return true;
 }
 
-export async function recordInfectionControlTaskUpdate(input: { role?: string; actor: string; taskIds: string[]; priority?: "high" | "medium" | "low"; status?: InfectionControlTaskStatus; writeAudit: (entry: { actor: string; role: string; tool: string; outcome: string; detail: string }) => Promise<unknown>; updateTasks: (input: { taskIds: string[]; priority?: "high" | "medium" | "low"; status?: InfectionControlTaskStatus; updatedBy: string }) => Promise<unknown> }) {
+export async function recordInfectionControlTaskUpdate(input: { role?: string; actor: string; taskIds: string[]; priority?: "high" | "medium" | "low"; status?: InfectionControlTaskStatus; comment?: string; writeAudit: (entry: { actor: string; role: string; tool: string; outcome: string; detail: string }) => Promise<unknown>; updateTasks: (input: { taskIds: string[]; priority?: "high" | "medium" | "low"; status?: InfectionControlTaskStatus; updatedBy: string }) => Promise<unknown> }) {
   validateInfectionControlTaskUpdate(input);
   const updatedTasks = await input.updateTasks({ taskIds: input.taskIds, priority: input.priority, status: input.status, updatedBy: input.actor });
-  await input.writeAudit({ actor: input.actor, role: input.role || "medical_director", tool: "ipc_task_update", outcome: "updated", detail: `IPC tasks updated: ${input.taskIds.join(", ")}; ${input.priority ? `priority=${input.priority}` : ""}${input.priority && input.status ? ", " : ""}${input.status ? `status=${input.status}` : ""}` });
+  await input.writeAudit({ actor: input.actor, role: input.role || "medical_director", tool: "ipc_task_update", outcome: "updated", detail: `IPC tasks updated: ${input.taskIds.join(", ")}; ${input.priority ? `priority=${input.priority}` : ""}${input.priority && input.status ? ", " : ""}${input.status ? `status=${input.status}` : ""}${input.comment?.trim() ? `; comment=${input.comment.trim()}` : ""}` });
   return { taskIds: input.taskIds, priority: input.priority, status: input.status, updatedTasks, recordedBy: input.actor };
 }
 

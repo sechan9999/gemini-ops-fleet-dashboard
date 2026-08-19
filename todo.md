@@ -117,3 +117,10 @@
 - [x] Invalidate/refetch IPC task data after inline and bulk updates instead of relying only on local overrides.
 - [x] Automatically generate the IPC trend summary when the active chart range or data changes, with loading and fallback handling.
 - [x] Re-test, document, visually verify, and checkpoint the durable IPC bulk/edit/summary release.
+
+- [x] Add natural-language question input and governed answers for active IPC trend data.
+- [x] Add visual progress and success notification feedback to bulk IPC actions.
+- [x] Add audited explanatory comments when inline task status changes are made.
+- [x] Test, document, visually verify, and checkpoint the IPC questions/progress/comments upgrade.
+
+- [ ] Save a new checkpoint after the IPC natural-language questions, bulk progress feedback, and inline comment changes.

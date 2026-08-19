@@ -244,3 +244,19 @@
 .ipc-task-row.selected { border-color: #087f73; background: #f0faf6; }
 .ipc-inline-select { min-width: 96px; padding: .35rem .5rem; font-size: .7rem; }
 @media (max-width: 720px) { .ipc-summary-widget { margin: 0 .75rem; } .ipc-bulk-toolbar { align-items: stretch; } .ipc-select-all { width: 100%; margin-right: 0; } .ipc-task-row { align-items: flex-start; flex-wrap: wrap; } .ipc-task-row > .flex-1 { min-width: calc(100% - 70px); } .ipc-inline-select { flex: 1 1 120px; } }
+
+.ipc-question-box { margin-top: .9rem; padding-top: .9rem; border-top: 1px solid #dbe8e1; }
+.ipc-question-answer { margin-top: .75rem; padding: .7rem .8rem; border-radius: 10px; background: rgba(255,255,255,.72); color: #475569; font-size: .8rem; line-height: 1.5; }
+.ipc-question-answer p { margin-top: .25rem; }
+.ipc-bulk-progress { display: inline-flex; min-width: 180px; align-items: center; gap: .5rem; color: #087f73; font-size: .72rem; font-weight: 600; }
+.ipc-progress-track { width: 76px; height: 6px; overflow: hidden; border-radius: 999px; background: #dcefe9; }
+.ipc-progress-track span { display: block; height: 100%; border-radius: inherit; background: #087f73; animation: ipc-progress-pulse 1.1s ease-in-out infinite alternate; }
+.ipc-bulk-success { display: inline-flex; align-items: center; gap: .35rem; color: #087f73; font-size: .72rem; font-weight: 700; }
+.ipc-comment-trigger { display: inline-flex; align-items: center; gap: .2rem; border: 0; background: transparent; color: #64748b; font-size: .68rem; cursor: pointer; }
+.ipc-comment-trigger:hover { color: #087f73; }
+.ipc-inline-comment { display: flex; align-items: center; gap: .45rem; margin-top: .55rem; }
+.ipc-inline-comment .text-input { min-width: 0; flex: 1; padding: .45rem .6rem; font-size: .72rem; }
+.ipc-inline-comment span { flex: 0 0 auto; color: #94a3b8; font-size: .64rem; }
+@keyframes ipc-progress-pulse { from { transform: translateX(-24px); width: 40%; } to { transform: translateX(55px); width: 70%; } }
+@media (prefers-reduced-motion: reduce) { .ipc-progress-track span { animation: none; width: 100% !important; } }
+@media (max-width: 640px) { .ipc-bulk-progress { flex-basis: 100%; } .ipc-question-box .text-input { width: 100%; } .ipc-inline-comment { align-items: stretch; flex-direction: column; } }

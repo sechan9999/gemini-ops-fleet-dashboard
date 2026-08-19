@@ -146,6 +146,7 @@ x-trpc-procedures:
     - fleet.infectionControlTransition
     - fleet.infectionControlTaskBulkUpdate
     - fleet.infectionControlTrendSummary
+    - fleet.infectionControlTrendQuestion
     - fleet.telemetry
     - fleet.transition
     - fleet.summarize
@@ -169,6 +170,7 @@ x-trpc-procedures:
     fleet.infectionControlTransition: signal, action=verify|escalate|dismiss, reason required for escalate or dismiss
     fleet.infectionControlTaskBulkUpdate: taskIds (1-50), optional priority=high|medium|low, optional status=open|in_progress|completed; reviewer role required and every update creates an audit entry
     fleet.infectionControlTrendSummary: range=daily|weekly, bounded trend points and task snapshot; returns a concise Gemini operational brief or deterministic fallback
+    fleet.infectionControlTrendQuestion: question (3-500 chars), range, bounded trend points and task snapshot; returns a Gemini answer constrained to supplied synthetic operational data or deterministic fallback
     admin.ipcPolicy: facilityId optional, defaults to default-hospital
     admin.updateIpcPolicy: facilityId, facilityName, handHygieneWatchPct, handHygieneCriticalPct, evidenceStaleMinutes, ppeStaleHours, urgentNotifications, watchNotifications, lowResourceDefault; critical must be lower than watch
   exportContracts:
@@ -176,8 +178,10 @@ x-trpc-procedures:
     ipcTrendReports: "Browser-generated PNG or PDF snapshot of the currently selected daily/weekly IPC trend charts and custom date range"
     ipcQueuePresets: "Browser-persisted named combinations of keyword search, escalation reason, and priority sort for quick IPC queue access"
     ipcPriority: "Protected IPC tasks expose high, medium, or low priority; the queue renders color-coded badges and supports high-to-low, low-to-high, and original-order sorting"
-    ipcBulkActions: "Reviewer-only multi-select actions update priority/status or export selected tasks; inline edits use the same protected mutation and audit boundary"
+    ipcBulkActions: "Reviewer-only multi-select actions update priority/status or export selected tasks; the UI shows progress and success feedback, while the protected mutation persists each change"
+    ipcInlineComments: "Inline status/priority changes may include a 500-character explanatory comment; the comment is recorded in the attributed audit detail"
     ipcTrendSummary: "AI-generated summary widget above the charts describes synthetic workload and human decisions without making clinical or autonomous declarations"
+    ipcTrendQuestions: "Natural-language questions are answered only from the selected bounded trend points and task snapshot; unsupported clinical or autonomous requests are declined"
     auditCsv: "Browser export of filtered audit records with id, actor, role, tool, outcome, detail, and timestamp columns"
 components:
   securitySchemes:

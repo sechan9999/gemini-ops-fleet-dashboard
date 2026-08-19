@@ -101,3 +101,9 @@ The IPC task table is now durable in the managed database. The protected overvie
 The Gemini trend brief now generates automatically when the active range, trend points, or task snapshot changes. It retains the manual regenerate control, loading state, governed framing, and deterministic fallback behavior. The summary text is constrained responsively on narrow screens.
 
 Final validation passed with 21 Vitest tests, TypeScript, production build, managed database row verification, and desktop/mobile visual verification.
+
+## IPC Questions, Progress Feedback, and Inline Notes
+
+The trend panel now accepts natural-language questions about the selected daily or weekly trend range. Questions and bounded queue context are sent only to a protected server-side procedure; the model is instructed to answer from supplied synthetic operational data, state uncertainty, and decline diagnosis, treatment, invented facts, or autonomous decisions. The UI shows the answer source context and a deterministic fallback when the model is unavailable.
+
+Bulk IPC updates now expose an animated progress bar, updating state, and a success confirmation that the change was saved and audited. Inline task editors include a quick Note control with a 500-character explanatory comment field. When a status or priority change is submitted, the note travels through the protected mutation and is stored in the attributed audit detail.

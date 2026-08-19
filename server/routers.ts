@@ -63,7 +63,7 @@ export const appRouter = router({
       const decision = await recordInfectionControlDecision({ actor: ctx.user.name || "Operator", role: profile?.dashboardRole, signal: input.signal, action: input.action, reason: input.reason, writeAudit: addAuditEntry });
       return { ...decision, recordedAt: new Date().toISOString() };
     }),
-    infectionControlTaskBulkUpdate: protectedProcedure.input(z.object({ taskIds: z.array(z.string().min(1)).min(1).max(50), priority: z.enum(["high", "medium", "low"]).optional(), status: z.enum(["open", "in_progress", "completed"]).optional() })).mutation(async ({ ctx, input }) => {
+    infectionControlTaskBulkUpdate: protectedProcedure.input(z.object({ taskIds: z.array(z.string().min(1)).min(1).max(50), priority: z.enum(["high", "medium", "low"]).optional(), status: z.enum(["open", "in_progress", "completed"]).optional(), comment: z.string().trim().max(500).optional() })).mutation(async ({ ctx, input }) => {
       const profile = await profileFor(ctx.user);
       return recordInfectionControlTaskUpdate({ ...input, actor: ctx.user.name || "Operator", role: profile?.dashboardRole, writeAudit: addAuditEntry, updateTasks: updateIpcTasks });
     }),
@@ -78,6 +78,16 @@ export const appRouter = router({
     telemetry: protectedProcedure.query(async () => {
       const data = await listTelemetry();
       return { runtime: data.runtime.map((row) => ({ mode: row.mode, model: row.model, database: row.database, guardrail: row.guardrail, pubsub: row.pubsub, trace: row.trace })), agents: data.agents.map((row) => ({ id: row.id, name: row.name, domain: row.domain, version: row.version, autonomy: row.autonomy as "autonomous" | "drafts_only" | "read_only", capabilities: row.capabilities as string[], restrictions: row.restrictions as string[], health: row.health as "healthy" | "standby" })), events: data.events.map((row) => ({ id: row.id, kind: row.kind, actor: row.actor, routedTo: row.routedTo, status: row.status as "completed" | "pending" | "blocked", timestamp: row.occurredAt.toISOString(), detail: row.detail })) };
+    }),
+    infectionControlTrendQuestion: protectedProcedure.input(z.object({ question: z.string().trim().min(3).max(500), range: z.enum(["daily", "weekly"]), points: z.array(z.object({ label: z.string(), openTasks: z.number(), completedTasks: z.number(), escalations: z.number(), dismissals: z.number() })).max(14), tasks: z.array(z.object({ id: z.string(), priority: z.enum(["high", "medium", "low"]), status: z.enum(["open", "in_progress", "completed"]), count: z.number() })).max(50) })).mutation(async ({ input }) => {
+      const fallback = `I can answer only from the supplied ${input.range} synthetic trend data. The current context includes ${input.tasks.length} queue tasks and ${input.points.length} trend observations. No clinical diagnosis, treatment recommendation, or autonomous action is produced.`;
+      try {
+        const response = await invokeLLM({ messages: [{ role: "system", content: "Answer a specific question about a synthetic infection-control operations queue using only the bounded data in the user message. Be concise, state uncertainty when the data is insufficient, and never diagnose, recommend treatment, invent facility facts, or make an autonomous decision. If the question asks for unsupported information, say it is not available in the supplied data." }, { role: "user", content: JSON.stringify(input) }] });
+        const content = response.choices?.[0]?.message?.content;
+        return { answer: typeof content === "string" && content.trim() ? content.trim() : fallback, source: "gemini" as const, askedAt: new Date().toISOString() };
+      } catch {
+        return { answer: fallback, source: "deterministic_fallback" as const, askedAt: new Date().toISOString() };
+      }
     }),
     transition: protectedProcedure.input(actionInput).mutation(async ({ ctx, input }) => {
       const profile = await profileFor(ctx.user); const approval = await getApprovalRequest(input.id); if (!approval) throw new Error("Approval request not found");
