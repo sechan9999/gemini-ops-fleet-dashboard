@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addAuditEntry, createOperatorNotification, ensureFleetSeeded, getApprovalRequest, getNotificationPreferences, getOperatorProfile, getUserById, listApprovalRequests, listApprovalRequestsPage, listAuditEntries, listOperatorNotifications, listOperatorProfiles, listRoleChanges, listTelemetry, listOperationalMetricSnapshots, listIpcTasks, markOperatorNotificationsRead, recordOperationalMetricSnapshot, recordRoleChange, updateApprovalRequest, updateIpcTasks, upsertIpcPolicy, upsertNotificationPreferences, upsertOperatorProfile, getIpcPolicy } from "./db";
+import { addAuditEntry, createOperatorNotification, ensureFleetSeeded, getApprovalRequest, getNotificationPreferences, getOperatorProfile, getUserById, listApprovalRequests, listApprovalRequestsPage, listAuditEntries, listOperatorNotifications, listOperatorProfiles, listRoleChanges, listTelemetry, listOperationalMetricSnapshots, listIpcTaskComments, listIpcTasks, markOperatorNotificationsRead, recordOperationalMetricSnapshot, recordRoleChange, updateApprovalRequest, updateIpcTasks, upsertIpcPolicy, upsertNotificationPreferences, upsertOperatorProfile, getIpcPolicy } from "./db";
 import { getFleetEventBridgeMetrics } from "./fleet-event-bridge";
 import { getNotificationStreamMetrics } from "./notifications";
 import { getInfectionControlOverview, getInfectionControlTrends, recordInfectionControlDecision, recordInfectionControlTaskUpdate } from "./infection-control";
@@ -59,11 +59,14 @@ export const appRouter = router({
     infectionControl: protectedProcedure.query(async () => {
       const overview = getInfectionControlOverview();
       const tasks = await listIpcTasks();
+      const comments = await listIpcTaskComments(tasks.map((task) => task.id));
+      const commentsByTask = new Map<string, Array<{ id: string; comment: string; actor: string; role: string; createdAt: string }>>();
+      comments.forEach((entry) => { const existing = commentsByTask.get(entry.taskId) || []; existing.push({ id: String(entry.id), comment: entry.comment, actor: entry.actor, role: entry.role, createdAt: entry.createdAt.toISOString() }); commentsByTask.set(entry.taskId, existing); });
       return {
         ...overview,
         tasks: tasks.length
-          ? tasks.map((task) => ({ id: task.id, label: task.label, count: task.count, tone: task.tone, priority: task.priority, status: task.status, kind: task.kind, reason: task.reason, lastComment: task.lastComment || null }))
-          : overview.tasks.map((task) => ({ ...task, lastComment: null })),
+          ? tasks.map((task) => ({ id: task.id, label: task.label, count: task.count, tone: task.tone, priority: task.priority, status: task.status, kind: task.kind, reason: task.reason, lastComment: task.lastComment || null, commentHistory: commentsByTask.get(task.id) || [] }))
+          : overview.tasks.map((task) => ({ ...task, lastComment: null, commentHistory: [] })),
       };
     }),
     infectionControlTrends: protectedProcedure.input(z.object({ from: z.string().optional(), to: z.string().optional() }).optional()).query(async ({ input }) => getInfectionControlTrends(input)),
@@ -97,6 +100,18 @@ export const appRouter = router({
       } catch {
         return { answer: fallback, source: "deterministic_fallback" as const, askedAt: new Date().toISOString() };
       }
+    }),
+    infectionControlCommentSummary: protectedProcedure.input(z.object({ range: z.enum(["daily", "weekly"]), comments: z.array(z.object({ taskId: z.string(), comment: z.string().max(500), actor: z.string().max(160), role: z.string().max(80), createdAt: z.string() })).max(200) })).mutation(async ({ input }) => {
+      const categories = ["verification", "resource", "training", "coverage", "other"] as const;
+      const fallbackCounts = Object.fromEntries(categories.map((category) => [category, 0])) as Record<typeof categories[number], number>;
+      input.comments.forEach((entry) => { const text = entry.comment.toLowerCase(); const category = text.includes("verify") || text.includes("review") || text.includes("evidence") ? "verification" : text.includes("ppe") || text.includes("supply") || text.includes("resource") ? "resource" : text.includes("train") || text.includes("refresher") ? "training" : text.includes("cover") || text.includes("staff") || text.includes("ward") ? "coverage" : "other"; fallbackCounts[category] += 1; });
+      const fallback = input.comments.length ? `${input.comments.length} explanatory comments were reviewed for the ${input.range} queue view. ${fallbackCounts.verification} relate to verification, ${fallbackCounts.resource} to resources, ${fallbackCounts.training} to training, and ${fallbackCounts.coverage} to coverage. This categorization is an operational aid, not a clinical conclusion.` : "No explanatory comments are available in the selected IPC queue context.";
+      try {
+        const response = await invokeLLM({ messages: [{ role: "system", content: "Categorize and summarize explanatory comments from a synthetic infection-control operations queue. Use only the supplied comments. Return concise operational language, mention uncertainty, and never diagnose, recommend treatment, invent facts, or make an autonomous decision." }, { role: "user", content: JSON.stringify(input) }], response_format: { type: "json_schema", json_schema: { name: "ipc_comment_summary", strict: true, schema: { type: "object", properties: { summary: { type: "string" }, categories: { type: "array", items: { type: "object", properties: { name: { type: "string" }, count: { type: "integer" }, note: { type: "string" } }, required: ["name", "count", "note"], additionalProperties: false } } }, required: ["summary", "categories"], additionalProperties: false } } } });
+        const content = response.choices?.[0]?.message?.content;
+        if (typeof content === "string") { const parsed = JSON.parse(content) as { summary?: string; categories?: Array<{ name: string; count: number; note: string }> }; if (parsed.summary?.trim()) return { summary: parsed.summary.trim(), categories: parsed.categories || [], source: "gemini" as const }; }
+      } catch { /* deterministic fallback below */ }
+      return { summary: fallback, categories: categories.filter((category) => fallbackCounts[category] > 0).map((category) => ({ name: category, count: fallbackCounts[category], note: "Keyword-based operational grouping" })), source: "deterministic_fallback" as const };
     }),
     transition: protectedProcedure.input(actionInput).mutation(async ({ ctx, input }) => {
       const profile = await profileFor(ctx.user); const approval = await getApprovalRequest(input.id); if (!approval) throw new Error("Approval request not found");

@@ -113,3 +113,13 @@ Bulk IPC updates now expose an animated progress bar, updating state, and a succ
 The Gemini trend widget now keeps the latest twelve bounded natural-language questions and answers in browser storage. Each history item records the selected range and timestamp, can be expanded for review, and includes a clipboard copy action for report drafting. The answer remains constrained to the supplied synthetic operational context.
 
 The IPC queue now includes a dedicated “with explanatory comments” filter, searches comment text, displays the latest durable note, and preserves the filter in saved presets. Bulk status updates provide an optional shared comment field; the comment is persisted to every selected task and copied into every attributed audit detail. The reusable `agentic-ops-governance-dashboard` skill now documents these patterns and validates successfully.
+
+## IPC Comment Timeline and Categorization
+
+The IPC task queue now persists every explanatory note in an append-only timeline with task ID, actor, server-derived role, and UTC timestamp. Inline editing renders the full chronological history, while the queue note affordance provides a concise hover preview. The latest note remains available for filtering and CSV review, but the timeline is the authoritative comment history.
+
+The Gemini trend panel now automatically categorizes and summarizes bounded explanatory comments using a protected structured-output procedure. Categories are operational groupings such as verification, resource, training, coverage, and other. If the model is unavailable, a deterministic keyword fallback is shown with explicit operational-only framing; no clinical conclusion or autonomous action is produced.
+
+### Backfill Verification
+
+The non-destructive timeline migration includes an idempotent backfill path from `ipcTasks.lastComment`, using the task updater and timestamp as legacy attribution. Verification found zero existing latest-comment rows and zero prior `ipc_task_update` audit records containing comment details, so no historical rows were available to import. Future inline and bulk comments are written to the timeline and audit trail together.

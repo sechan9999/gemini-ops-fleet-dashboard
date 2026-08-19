@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, gte, inArray, lte, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { adminRoleChanges, approvalRequests, auditEntries, fleetAgents, fleetEvents, ipcPolicies, ipcTasks, InsertAdminRoleChange, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertIpcPolicy, InsertIpcTask, InsertNotificationPreferences, InsertOperatorNotification, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, notificationPreferences, operatorNotifications, operatorProfiles, operationalMetricSnapshots, runtimeTelemetry, users } from "../drizzle/schema";
+import { adminRoleChanges, approvalRequests, auditEntries, fleetAgents, fleetEvents, ipcPolicies, ipcTaskComments, ipcTasks, InsertAdminRoleChange, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertIpcPolicy, InsertIpcTask, InsertNotificationPreferences, InsertOperatorNotification, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, notificationPreferences, operatorNotifications, operatorProfiles, operationalMetricSnapshots, runtimeTelemetry, users } from "../drizzle/schema";
 import { publishNotification } from "./notifications";
 import { ENV } from './_core/env';
 
@@ -110,12 +110,21 @@ export async function listIpcTasks() {
   return db.select().from(ipcTasks).orderBy(sql`FIELD(${ipcTasks.priority}, 'high', 'medium', 'low'), ${ipcTasks.updatedAt} DESC`);
 }
 
-export async function updateIpcTasks(input: { taskIds: string[]; priority?: "high" | "medium" | "low"; status?: "open" | "in_progress" | "completed"; lastComment?: string; updatedBy: string }) {
+export async function updateIpcTasks(input: { taskIds: string[]; priority?: "high" | "medium" | "low"; status?: "open" | "in_progress" | "completed"; lastComment?: string; updatedBy: string; updatedByRole: string }) {
   await ensureIpcTasksSeeded();
   const db = await getDb();
   if (!db) return [];
   await db.update(ipcTasks).set({ ...(input.priority ? { priority: input.priority } : {}), ...(input.status ? { status: input.status } : {}), ...(input.lastComment?.trim() ? { lastComment: input.lastComment.trim() } : {}), updatedBy: input.updatedBy }).where(inArray(ipcTasks.id, input.taskIds));
+  if (input.lastComment?.trim()) {
+    await db.insert(ipcTaskComments).values(input.taskIds.map((taskId) => ({ taskId, comment: input.lastComment!.trim(), actor: input.updatedBy, role: input.updatedByRole })));
+  }
   return db.select().from(ipcTasks).where(inArray(ipcTasks.id, input.taskIds));
+}
+
+export async function listIpcTaskComments(taskIds?: string[]) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(ipcTaskComments).where(taskIds?.length ? inArray(ipcTaskComments.taskId, taskIds) : undefined).orderBy(asc(ipcTaskComments.createdAt));
 }
 
 export async function ensureFleetSeeded() {

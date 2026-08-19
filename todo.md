@@ -131,4 +131,17 @@
 - [x] Update and validate the reusable governance dashboard skill for these patterns.
 - [x] Test, document, visually verify, and checkpoint the IPC history/comment upgrade.
 
-- [ ] Save and auto-publish a new checkpoint for the IPC Q&A history, comment-filter, and shared-bulk-comment upgrade.
+- [x] Save and auto-publish a new checkpoint for the IPC Q&A history, comment-filter, and shared-bulk-comment upgrade.
+
+- [x] Add durable chronological comment history per IPC task.
+- [x] Add governed AI categorization and summary of explanatory comments above the IPC charts.
+- [x] Add hover tooltip previews for task comment history in the IPC queue.
+- [x] Update and validate the reusable governance dashboard skill for comment timelines and categorization.
+- [x] Test, document, visually verify, and checkpoint the IPC comment-history upgrade.
+
+- [x] Backfill existing IPC task comments from durable latest-comment and audit sources into the timeline table; verification found no legacy comment rows to import.
+- [x] Verify historical timeline and hover-preview behavior, then save and auto-publish a new checkpoint.
+
+- [x] Create two governed synthetic IPC comments through the application mutation and verify chronological timeline/hover preview behavior before checkpointing.
+
+- [ ] Save and auto-publish the IPC comment timeline, AI categorization, and hover-preview release after real tRPC verification.

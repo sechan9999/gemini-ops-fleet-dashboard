@@ -1,4 +1,4 @@
-import { boolean, index, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { bigint, boolean, index, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -224,3 +224,18 @@ export const ipcTasks = mysqlTable("ipcTasks", {
 
 export type IpcTask = typeof ipcTasks.$inferSelect;
 export type InsertIpcTask = typeof ipcTasks.$inferInsert;
+
+export const ipcTaskComments = mysqlTable("ipcTaskComments", {
+  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  taskId: varchar("taskId", { length: 100 }).notNull(),
+  comment: text("comment").notNull(),
+  actor: varchar("actor", { length: 160 }).notNull(),
+  role: varchar("role", { length: 80 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  taskIdx: index("ipcTaskComments_task_idx").on(table.taskId),
+  createdIdx: index("ipcTaskComments_created_idx").on(table.createdAt),
+}));
+
+export type IpcTaskComment = typeof ipcTaskComments.$inferSelect;
+export type InsertIpcTaskComment = typeof ipcTaskComments.$inferInsert;

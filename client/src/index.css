@@ -268,3 +268,12 @@
 .icon-button.small { width: 26px; height: 26px; }
 .bulk-comment-input { min-width: 220px; padding: .45rem .6rem; font-size: .72rem; }
 @media (max-width: 640px) { .bulk-comment-input { flex-basis: 100%; min-width: 0; } }
+
+.ipc-comment-ai-state { display: inline-flex; align-items: center; gap: .4rem; margin-top: .55rem; color: #087f73; font-size: .72rem; }
+.ipc-comment-ai-summary { margin-top: .65rem; border: 1px solid #dbe8e1; border-radius: 10px; padding: .65rem .75rem; background: rgba(244, 251, 247, .7); }
+.ipc-comment-timeline { margin-bottom: .65rem; border-left: 2px solid #b9ddd4; padding-left: .7rem; max-height: 220px; overflow-y: auto; }
+.ipc-comment-entry { position: relative; margin-top: .55rem; border-bottom: 1px solid #e6eee9; padding-bottom: .55rem; }
+.ipc-comment-entry::before { content: ""; position: absolute; left: -.92rem; top: .18rem; width: .42rem; height: .42rem; border: 2px solid #087f73; border-radius: 999px; background: #fbfaf6; }
+.ipc-comment-trigger { display: inline-flex; align-items: center; gap: .25rem; color: #087f73; font-size: .68rem; font-weight: 700; }
+.ipc-comment-trigger:hover { text-decoration: underline; }
+@media (max-width: 640px) { .ipc-comment-ai-summary { padding: .6rem; } .ipc-comment-entry time { display: block; margin-top: .15rem; } }

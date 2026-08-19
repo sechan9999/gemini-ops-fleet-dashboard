@@ -171,6 +171,7 @@ x-trpc-procedures:
     fleet.infectionControlTaskBulkUpdate: taskIds (1-50), optional priority=high|medium|low, optional status=open|in_progress|completed; reviewer role required and every update creates an audit entry
     fleet.infectionControlTrendSummary: range=daily|weekly, bounded trend points and task snapshot; returns a concise Gemini operational brief or deterministic fallback
     fleet.infectionControlTrendQuestion: question (3-500 chars), range, bounded trend points and task snapshot; returns a Gemini answer constrained to supplied synthetic operational data or deterministic fallback
+    fleet.infectionControlCommentSummary: protected range plus at most 200 bounded comment records; returns structured categories/counts and an operational summary, or deterministic keyword fallback
     admin.ipcPolicy: facilityId optional, defaults to default-hospital
     admin.updateIpcPolicy: facilityId, facilityName, handHygieneWatchPct, handHygieneCriticalPct, evidenceStaleMinutes, ppeStaleHours, urgentNotifications, watchNotifications, lowResourceDefault; critical must be lower than watch
   exportContracts:
@@ -183,6 +184,9 @@ x-trpc-procedures:
     ipcCommentFilter: "Browser queue filter showing only durable IPC tasks with a non-empty explanatory comment; included in saved presets and search context"
     ipcBulkComments: "Reviewer-only bulk status updates may include one shared explanatory comment up to 500 characters; the note is persisted to each selected task and copied into each attributed audit detail"
     ipcQnAHistory: "Browser-persisted history of the latest bounded trend questions and answers with range, timestamp, and clipboard copy action"
+    ipcCommentTimeline: "Durable append-only IPC task comment timeline with task ID, actor, server-derived role, UTC timestamp, and chronological inline-editor rendering"
+    ipcCommentPreview: "Queue note affordance exposes a concise hover preview of the task comment timeline; full review remains available in inline editing"
+    ipcCommentCategorization: "Protected structured AI categorization of bounded explanatory comments with deterministic fallback; operational aid only, not a clinical conclusion"
     ipcTrendSummary: "AI-generated summary widget above the charts describes synthetic workload and human decisions without making clinical or autonomous declarations"
     ipcTrendQuestions: "Natural-language questions are answered only from the selected bounded trend points and task snapshot; unsupported clinical or autonomous requests are declined"
     auditCsv: "Browser export of filtered audit records with id, actor, role, tool, outcome, detail, and timestamp columns"

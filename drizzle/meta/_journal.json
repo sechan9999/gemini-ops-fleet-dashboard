@@ -64,6 +64,13 @@
       "when": 1787147248299,
       "tag": "0008_lean_morbius",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1787149874759,
+      "tag": "0009_curly_bloodstrike",
+      "breakpoints": true
     }
   ]
 }

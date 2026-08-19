@@ -37,12 +37,13 @@ describe("infection-control overview", () => {
 
   it("gates bulk task updates and records one durable audit entry", async () => {
     const auditRows: Array<{ actor: string; role: string; tool: string; outcome: string; detail: string }> = [];
-    let durableInput: { lastComment?: string } = {};
+    let durableInput: { lastComment?: string; updatedByRole?: string } = {};
     const result = await recordInfectionControlTaskUpdate({ role: "medical_director", actor: "Dr. HK Chun", taskIds: ["ipc-precaution-review", "ipc-surface-verification"], priority: "medium", status: "in_progress", comment: "Reviewed with ward lead", writeAudit: async row => { auditRows.push(row); }, updateTasks: async input => { durableInput = input; return input; } });
     expect(result.taskIds).toHaveLength(2);
     expect(auditRows[0]).toMatchObject({ actor: "Dr. HK Chun", role: "medical_director", tool: "ipc_task_update", outcome: "updated" });
     expect(auditRows[0].detail).toContain("Reviewed with ward lead");
     expect(durableInput.lastComment).toBe("Reviewed with ward lead");
+    expect(durableInput.updatedByRole).toBe("medical_director");
     await expect(recordInfectionControlTaskUpdate({ role: "data_scientist", actor: "Analyst", taskIds: ["ipc-precaution-review"], priority: "low", writeAudit: async () => undefined, updateTasks: async input => input })).rejects.toThrow("cannot record");
     await expect(recordInfectionControlTaskUpdate({ role: "medical_director", actor: "Dr. HK Chun", taskIds: [], priority: "high", writeAudit: async () => undefined, updateTasks: async input => input })).rejects.toThrow("between 1 and 50");
   });
