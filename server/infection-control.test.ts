@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getInfectionControlOverview, recordInfectionControlDecision, validateInfectionControlTransition } from "./infection-control";
+import { getInfectionControlOverview, recordInfectionControlDecision, recordInfectionControlTaskUpdate, validateInfectionControlTransition } from "./infection-control";
 
 describe("infection-control overview", () => {
   it("returns synthetic ward signals with accountable owners and evidence", () => {
@@ -33,6 +33,15 @@ describe("infection-control overview", () => {
     expect(overview.trends.daily).toHaveLength(7);
     expect(overview.trends.weekly).toHaveLength(4);
     expect(overview.trends.daily.every(point => /^2026-\d{2}-\d{2}$/.test(point.dateKey) && point.openTasks >= 0 && point.completedTasks >= 0)).toBe(true);
+  });
+
+  it("gates bulk task updates and records one durable audit entry", async () => {
+    const auditRows: Array<{ actor: string; role: string; tool: string; outcome: string; detail: string }> = [];
+    const result = await recordInfectionControlTaskUpdate({ role: "medical_director", actor: "Dr. HK Chun", taskIds: ["ipc-precaution-review", "ipc-surface-verification"], priority: "medium", status: "in_progress", writeAudit: async row => { auditRows.push(row); }, updateTasks: async input => input });
+    expect(result.taskIds).toHaveLength(2);
+    expect(auditRows[0]).toMatchObject({ actor: "Dr. HK Chun", role: "medical_director", tool: "ipc_task_update", outcome: "updated" });
+    await expect(recordInfectionControlTaskUpdate({ role: "data_scientist", actor: "Analyst", taskIds: ["ipc-precaution-review"], priority: "low", writeAudit: async () => undefined, updateTasks: async input => input })).rejects.toThrow("cannot record");
+    await expect(recordInfectionControlTaskUpdate({ role: "medical_director", actor: "Dr. HK Chun", taskIds: [], priority: "high", writeAudit: async () => undefined, updateTasks: async input => input })).rejects.toThrow("between 1 and 50");
   });
 
   it("keeps autonomous declarations disabled and human approval required", () => {

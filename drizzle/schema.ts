@@ -202,3 +202,24 @@ export const ipcPolicies = mysqlTable("ipcPolicies", {
 
 export type IpcPolicy = typeof ipcPolicies.$inferSelect;
 export type InsertIpcPolicy = typeof ipcPolicies.$inferInsert;
+
+export const ipcTasks = mysqlTable("ipcTasks", {
+  id: varchar("id", { length: 100 }).primaryKey(),
+  label: varchar("label", { length: 180 }).notNull(),
+  count: int("count").notNull().default(0),
+  tone: mysqlEnum("tone", ["urgent", "watch", "stable"]).notNull().default("stable"),
+  priority: mysqlEnum("priority", ["high", "medium", "low"]).notNull().default("medium"),
+  status: mysqlEnum("status", ["open", "in_progress", "completed"]).notNull().default("open"),
+  kind: mysqlEnum("kind", ["precaution", "cleaning", "training"]).notNull(),
+  reason: mysqlEnum("reason", ["coverage_gap", "ppe_readiness", "environmental_cleaning", "training_gap"]).notNull(),
+  updatedBy: varchar("updatedBy", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  statusIdx: index("ipcTasks_status_idx").on(table.status),
+  priorityIdx: index("ipcTasks_priority_idx").on(table.priority),
+  reasonIdx: index("ipcTasks_reason_idx").on(table.reason),
+}));
+
+export type IpcTask = typeof ipcTasks.$inferSelect;
+export type InsertIpcTask = typeof ipcTasks.$inferInsert;

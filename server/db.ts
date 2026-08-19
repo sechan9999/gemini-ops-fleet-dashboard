@@ -1,6 +1,6 @@
-import { and, asc, count, desc, eq, gte, lte, like, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, lte, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { adminRoleChanges, approvalRequests, auditEntries, fleetAgents, fleetEvents, ipcPolicies, InsertAdminRoleChange, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertIpcPolicy, InsertNotificationPreferences, InsertOperatorNotification, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, notificationPreferences, operatorNotifications, operatorProfiles, operationalMetricSnapshots, runtimeTelemetry, users } from "../drizzle/schema";
+import { adminRoleChanges, approvalRequests, auditEntries, fleetAgents, fleetEvents, ipcPolicies, ipcTasks, InsertAdminRoleChange, InsertApprovalRequest, InsertAuditEntry, InsertFleetAgent, InsertFleetEvent, InsertIpcPolicy, InsertIpcTask, InsertNotificationPreferences, InsertOperatorNotification, InsertOperatorProfile, InsertRuntimeTelemetry, InsertUser, notificationPreferences, operatorNotifications, operatorProfiles, operationalMetricSnapshots, runtimeTelemetry, users } from "../drizzle/schema";
 import { publishNotification } from "./notifications";
 import { ENV } from './_core/env';
 
@@ -90,7 +90,36 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function ensureIpcTasksSeeded() {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db.select({ id: ipcTasks.id }).from(ipcTasks).limit(1);
+  if (existing.length) return;
+  const seed: InsertIpcTask[] = [
+    { id: "ipc-precaution-review", label: "Transmission-based precaution review", count: 2, tone: "urgent", priority: "high", status: "open", kind: "precaution", reason: "coverage_gap" },
+    { id: "ipc-surface-verification", label: "High-touch surface verification", count: 4, tone: "watch", priority: "medium", status: "open", kind: "cleaning", reason: "environmental_cleaning" },
+    { id: "ipc-refresher-training", label: "Frontline refresher training", count: 1, tone: "stable", priority: "low", status: "open", kind: "training", reason: "training_gap" },
+  ];
+  await db.insert(ipcTasks).values(seed);
+}
+
+export async function listIpcTasks() {
+  await ensureIpcTasksSeeded();
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(ipcTasks).orderBy(sql`FIELD(${ipcTasks.priority}, 'high', 'medium', 'low'), ${ipcTasks.updatedAt} DESC`);
+}
+
+export async function updateIpcTasks(input: { taskIds: string[]; priority?: "high" | "medium" | "low"; status?: "open" | "in_progress" | "completed"; updatedBy: string }) {
+  await ensureIpcTasksSeeded();
+  const db = await getDb();
+  if (!db) return [];
+  await db.update(ipcTasks).set({ ...(input.priority ? { priority: input.priority } : {}), ...(input.status ? { status: input.status } : {}), updatedBy: input.updatedBy }).where(inArray(ipcTasks.id, input.taskIds));
+  return db.select().from(ipcTasks).where(inArray(ipcTasks.id, input.taskIds));
+}
+
 export async function ensureFleetSeeded() {
+  await ensureIpcTasksSeeded();
   const db = await getDb();
   if (!db) return;
   const existing = await db.select({ id: approvalRequests.id }).from(approvalRequests).limit(1);

@@ -85,3 +85,19 @@ IPC tasks now carry explicit high, medium, or low priority. The queue presents c
 The protected trend procedure accepts optional ISO date bounds. While a custom date-range request is loading, the visual dashboard presents two responsive chart skeletons instead of a blank panel, preserving context for operators.
 
 Validation for this increment passed TypeScript, the existing 20-test Vitest suite, desktop and mobile visual verification, and production build validation.
+
+## Latest IPC Governance and AI Workflow Enhancements
+
+The IPC queue now supports reviewer-only multi-selection. Medical directors and payer-operations reviewers can update the priority or status of up to 50 selected tasks in one audited action, or export the selected tasks together. Each task also exposes inline status and priority selectors that use the same protected mutation boundary, with success/error feedback and local optimistic display state.
+
+A Gemini trend-brief widget now sits above the daily and weekly charts. It sends bounded, synthetic trend points and the current task snapshot to a server-side LLM procedure. The widget returns a concise workload and human-decision overview, explicitly framed as operational context rather than diagnosis, treatment advice, or an autonomous declaration; a deterministic fallback is returned if the model call is unavailable.
+
+This increment passed TypeScript validation, focused IPC tests, desktop and mobile visual verification, and OpenAPI documentation updates. The full test suite and production build remain required before checkpointing.
+
+## Durable Release Verification
+
+The IPC task table is now durable in the managed database. The protected overview hydrates task status and priority from `ipcTasks`, while inline and bulk updates persist through the server mutation, invalidate the IPC query cache, and create an audit entry with actor and role attribution. Selected CSV exports now include both priority and status.
+
+The Gemini trend brief now generates automatically when the active range, trend points, or task snapshot changes. It retains the manual regenerate control, loading state, governed framing, and deterministic fallback behavior. The summary text is constrained responsively on narrow screens.
+
+Final validation passed with 21 Vitest tests, TypeScript, production build, managed database row verification, and desktop/mobile visual verification.

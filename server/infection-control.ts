@@ -10,6 +10,7 @@ export type InfectionControlSignal = {
 };
 
 export type InfectionControlTaskReason = "coverage_gap" | "ppe_readiness" | "environmental_cleaning" | "training_gap";
+export type InfectionControlTaskStatus = "open" | "in_progress" | "completed";
 
 export type InfectionControlTask = {
   id: string;
@@ -17,6 +18,7 @@ export type InfectionControlTask = {
   count: number;
   tone: "urgent" | "watch" | "stable";
   priority: "high" | "medium" | "low";
+  status: InfectionControlTaskStatus;
   kind: "precaution" | "cleaning" | "training";
   reason: InfectionControlTaskReason;
 };
@@ -32,6 +34,20 @@ export type InfectionControlTrendPoint = {
   escalations: number;
   dismissals: number;
 };
+
+export function validateInfectionControlTaskUpdate(input: { role?: string; taskIds: string[]; priority?: "high" | "medium" | "low"; status?: InfectionControlTaskStatus }) {
+  assertInfectionControlReviewer(input.role);
+  if (!input.taskIds.length || input.taskIds.length > 50) throw new Error("Select between 1 and 50 IPC tasks");
+  if (!input.priority && !input.status) throw new Error("A priority or status change is required");
+  return true;
+}
+
+export async function recordInfectionControlTaskUpdate(input: { role?: string; actor: string; taskIds: string[]; priority?: "high" | "medium" | "low"; status?: InfectionControlTaskStatus; writeAudit: (entry: { actor: string; role: string; tool: string; outcome: string; detail: string }) => Promise<unknown>; updateTasks: (input: { taskIds: string[]; priority?: "high" | "medium" | "low"; status?: InfectionControlTaskStatus; updatedBy: string }) => Promise<unknown> }) {
+  validateInfectionControlTaskUpdate(input);
+  const updatedTasks = await input.updateTasks({ taskIds: input.taskIds, priority: input.priority, status: input.status, updatedBy: input.actor });
+  await input.writeAudit({ actor: input.actor, role: input.role || "medical_director", tool: "ipc_task_update", outcome: "updated", detail: `IPC tasks updated: ${input.taskIds.join(", ")}; ${input.priority ? `priority=${input.priority}` : ""}${input.priority && input.status ? ", " : ""}${input.status ? `status=${input.status}` : ""}` });
+  return { taskIds: input.taskIds, priority: input.priority, status: input.status, updatedTasks, recordedBy: input.actor };
+}
 
 export function validateInfectionControlTransition(action: "verify" | "escalate" | "dismiss", reason?: string) {
   if ((action === "escalate" || action === "dismiss") && !reason?.trim()) {
@@ -64,9 +80,9 @@ export function getInfectionControlOverview() {
       { ward: "Ward 3 · Rehab", signal: "Environmental cleaning feedback", level: "stable", freshness: "1 hr ago", owner: "Environmental services", evidence: "12 of 12 high-touch checks recorded", action: "Continue current audit cadence", resource: "No additional staffing" },
     ] satisfies InfectionControlSignal[],
     tasks: [
-      { id: "ipc-precaution-review", label: "Transmission-based precaution review", count: 2, tone: "urgent", priority: "high", kind: "precaution", reason: "coverage_gap" },
-      { id: "ipc-surface-verification", label: "High-touch surface verification", count: 4, tone: "watch", priority: "medium", kind: "cleaning", reason: "environmental_cleaning" },
-      { id: "ipc-refresher-training", label: "Frontline refresher training", count: 1, tone: "stable", priority: "low", kind: "training", reason: "training_gap" },
+      { id: "ipc-precaution-review", label: "Transmission-based precaution review", count: 2, tone: "urgent", priority: "high", status: "open", kind: "precaution", reason: "coverage_gap" },
+      { id: "ipc-surface-verification", label: "High-touch surface verification", count: 4, tone: "watch", priority: "medium", status: "open", kind: "cleaning", reason: "environmental_cleaning" },
+      { id: "ipc-refresher-training", label: "Frontline refresher training", count: 1, tone: "stable", priority: "low", status: "open", kind: "training", reason: "training_gap" },
     ] satisfies InfectionControlTask[],
     safety: {
       syntheticOnly: true,

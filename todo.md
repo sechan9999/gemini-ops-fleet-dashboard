@@ -107,3 +107,13 @@
 - [x] Add chart skeleton loading states while custom-range trend data is fetched.
 - [x] Add color-coded IPC task priority badges and priority sorting.
 - [x] Test, document, visually verify, and checkpoint the IPC preset/loading/priority upgrade.
+
+- [x] Add governed bulk IPC task selection with priority update and simultaneous export actions.
+- [x] Add inline IPC task status and priority editing with protected mutation boundaries.
+- [x] Add an AI-generated queue trend summary widget above the IPC charts.
+- [x] Test, document, visually verify, and checkpoint the IPC bulk/edit/summary upgrade.
+
+- [x] Persist IPC task priority and status server-side and hydrate the protected overview from durable state.
+- [x] Invalidate/refetch IPC task data after inline and bulk updates instead of relying only on local overrides.
+- [x] Automatically generate the IPC trend summary when the active chart range or data changes, with loading and fallback handling.
+- [x] Re-test, document, visually verify, and checkpoint the durable IPC bulk/edit/summary release.

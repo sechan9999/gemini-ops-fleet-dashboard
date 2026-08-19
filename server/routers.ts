@@ -4,10 +4,10 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addAuditEntry, createOperatorNotification, ensureFleetSeeded, getApprovalRequest, getNotificationPreferences, getOperatorProfile, getUserById, listApprovalRequests, listApprovalRequestsPage, listAuditEntries, listOperatorNotifications, listOperatorProfiles, listRoleChanges, listTelemetry, listOperationalMetricSnapshots, markOperatorNotificationsRead, recordOperationalMetricSnapshot, recordRoleChange, updateApprovalRequest, upsertIpcPolicy, upsertNotificationPreferences, upsertOperatorProfile, getIpcPolicy } from "./db";
+import { addAuditEntry, createOperatorNotification, ensureFleetSeeded, getApprovalRequest, getNotificationPreferences, getOperatorProfile, getUserById, listApprovalRequests, listApprovalRequestsPage, listAuditEntries, listOperatorNotifications, listOperatorProfiles, listRoleChanges, listTelemetry, listOperationalMetricSnapshots, listIpcTasks, markOperatorNotificationsRead, recordOperationalMetricSnapshot, recordRoleChange, updateApprovalRequest, updateIpcTasks, upsertIpcPolicy, upsertNotificationPreferences, upsertOperatorProfile, getIpcPolicy } from "./db";
 import { getFleetEventBridgeMetrics } from "./fleet-event-bridge";
 import { getNotificationStreamMetrics } from "./notifications";
-import { getInfectionControlOverview, getInfectionControlTrends, recordInfectionControlDecision } from "./infection-control";
+import { getInfectionControlOverview, getInfectionControlTrends, recordInfectionControlDecision, recordInfectionControlTaskUpdate } from "./infection-control";
 
 const dashboardRole = z.enum(["data_scientist", "medical_director", "payer_operations"]);
 const actionInput = z.object({ id: z.string().min(1), action: z.enum(["approve", "reject", "send"]), reason: z.string().optional() });
@@ -56,12 +56,24 @@ export const appRouter = router({
     markNotificationsRead: protectedProcedure.mutation(async ({ ctx }) => { await markOperatorNotificationsRead(ctx.user.id); return { success: true }; }),
     notificationPreferences: protectedProcedure.query(async ({ ctx }) => { const prefs = await getNotificationPreferences(ctx.user.id); return { roleChanges: prefs?.roleChanges ?? true, adminActions: prefs?.adminActions ?? true, toastEnabled: prefs?.toastEnabled ?? true }; }),
     updateNotificationPreferences: protectedProcedure.input(z.object({ roleChanges: z.boolean(), adminActions: z.boolean(), toastEnabled: z.boolean() })).mutation(async ({ ctx, input }) => { const prefs = await upsertNotificationPreferences({ userId: ctx.user.id, ...input }); return { roleChanges: prefs?.roleChanges ?? input.roleChanges, adminActions: prefs?.adminActions ?? input.adminActions, toastEnabled: prefs?.toastEnabled ?? input.toastEnabled }; }),
-    infectionControl: protectedProcedure.query(async () => getInfectionControlOverview()),
+    infectionControl: protectedProcedure.query(async () => { const overview = getInfectionControlOverview(); const tasks = await listIpcTasks(); return { ...overview, tasks: tasks.length ? tasks.map((task) => ({ id: task.id, label: task.label, count: task.count, tone: task.tone, priority: task.priority, status: task.status, kind: task.kind, reason: task.reason })) : overview.tasks }; }),
     infectionControlTrends: protectedProcedure.input(z.object({ from: z.string().optional(), to: z.string().optional() }).optional()).query(async ({ input }) => getInfectionControlTrends(input)),
     infectionControlTransition: protectedProcedure.input(z.object({ signal: z.string().min(1), action: z.enum(["verify", "escalate", "dismiss"]), reason: z.string().optional() })).mutation(async ({ ctx, input }) => {
       const profile = await profileFor(ctx.user);
       const decision = await recordInfectionControlDecision({ actor: ctx.user.name || "Operator", role: profile?.dashboardRole, signal: input.signal, action: input.action, reason: input.reason, writeAudit: addAuditEntry });
       return { ...decision, recordedAt: new Date().toISOString() };
+    }),
+    infectionControlTaskBulkUpdate: protectedProcedure.input(z.object({ taskIds: z.array(z.string().min(1)).min(1).max(50), priority: z.enum(["high", "medium", "low"]).optional(), status: z.enum(["open", "in_progress", "completed"]).optional() })).mutation(async ({ ctx, input }) => {
+      const profile = await profileFor(ctx.user);
+      return recordInfectionControlTaskUpdate({ ...input, actor: ctx.user.name || "Operator", role: profile?.dashboardRole, writeAudit: addAuditEntry, updateTasks: updateIpcTasks });
+    }),
+    infectionControlTrendSummary: protectedProcedure.input(z.object({ range: z.enum(["daily", "weekly"]), points: z.array(z.object({ label: z.string(), openTasks: z.number(), completedTasks: z.number(), escalations: z.number(), dismissals: z.number() })).max(14), tasks: z.array(z.object({ id: z.string(), priority: z.enum(["high", "medium", "low"]), status: z.enum(["open", "in_progress", "completed"]), count: z.number() })).max(50) })).mutation(async ({ input }) => {
+      const fallback = `The ${input.range} view contains ${input.points.reduce((sum, point) => sum + point.openTasks, 0)} open-task observations and ${input.points.reduce((sum, point) => sum + point.completedTasks, 0)} completed-task observations. Human reviewers recorded ${input.points.reduce((sum, point) => sum + point.escalations, 0)} escalations and ${input.points.reduce((sum, point) => sum + point.dismissals, 0)} dismissals. This synthetic operational signal requires local review.`;
+      try {
+        const response = await invokeLLM({ messages: [{ role: "system", content: "Summarize synthetic infection-control queue trends for a governed hospital operations dashboard. Return one concise paragraph of 55 words or fewer. Mention workload, human decisions, and uncertainty. Do not diagnose, recommend treatment, invent facility facts, or make an autonomous decision." }, { role: "user", content: JSON.stringify(input) }] });
+        const content = response.choices?.[0]?.message?.content;
+        return { summary: typeof content === "string" && content.trim() ? content.trim() : fallback, source: "gemini" as const };
+      } catch { return { summary: fallback, source: "deterministic_fallback" as const }; }
     }),
     telemetry: protectedProcedure.query(async () => {
       const data = await listTelemetry();
