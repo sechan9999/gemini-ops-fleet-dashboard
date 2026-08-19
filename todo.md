@@ -73,3 +73,5 @@
 - [x] Render and validate the revised video and submission package.
 - [x] Diagnose and fix the tRPC query receiving HTML instead of JSON at `/?from_webdev=1`.
 - [x] Validate the repaired API route with tests, build, and browser/network checks.
+- [x] Push current project HEAD to `sechan9999/payer-clinical-agents:gemini-ops-fleet-dashboard` without changing existing default branches. Deferred after GitHub returned 403; replaced by new repository push.
+- [ ] Create a new private GitHub repository and push the current project main branch.
