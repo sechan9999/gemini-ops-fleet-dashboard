@@ -7,7 +7,7 @@ import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_
 import { addAuditEntry, createOperatorNotification, ensureFleetSeeded, getApprovalRequest, getNotificationPreferences, getOperatorProfile, getUserById, listApprovalRequests, listApprovalRequestsPage, listAuditEntries, listOperatorNotifications, listOperatorProfiles, listRoleChanges, listTelemetry, listOperationalMetricSnapshots, markOperatorNotificationsRead, recordOperationalMetricSnapshot, recordRoleChange, updateApprovalRequest, upsertIpcPolicy, upsertNotificationPreferences, upsertOperatorProfile, getIpcPolicy } from "./db";
 import { getFleetEventBridgeMetrics } from "./fleet-event-bridge";
 import { getNotificationStreamMetrics } from "./notifications";
-import { getInfectionControlOverview, recordInfectionControlDecision } from "./infection-control";
+import { getInfectionControlOverview, getInfectionControlTrends, recordInfectionControlDecision } from "./infection-control";
 
 const dashboardRole = z.enum(["data_scientist", "medical_director", "payer_operations"]);
 const actionInput = z.object({ id: z.string().min(1), action: z.enum(["approve", "reject", "send"]), reason: z.string().optional() });
@@ -57,6 +57,7 @@ export const appRouter = router({
     notificationPreferences: protectedProcedure.query(async ({ ctx }) => { const prefs = await getNotificationPreferences(ctx.user.id); return { roleChanges: prefs?.roleChanges ?? true, adminActions: prefs?.adminActions ?? true, toastEnabled: prefs?.toastEnabled ?? true }; }),
     updateNotificationPreferences: protectedProcedure.input(z.object({ roleChanges: z.boolean(), adminActions: z.boolean(), toastEnabled: z.boolean() })).mutation(async ({ ctx, input }) => { const prefs = await upsertNotificationPreferences({ userId: ctx.user.id, ...input }); return { roleChanges: prefs?.roleChanges ?? input.roleChanges, adminActions: prefs?.adminActions ?? input.adminActions, toastEnabled: prefs?.toastEnabled ?? input.toastEnabled }; }),
     infectionControl: protectedProcedure.query(async () => getInfectionControlOverview()),
+    infectionControlTrends: protectedProcedure.query(async () => getInfectionControlTrends()),
     infectionControlTransition: protectedProcedure.input(z.object({ signal: z.string().min(1), action: z.enum(["verify", "escalate", "dismiss"]), reason: z.string().optional() })).mutation(async ({ ctx, input }) => {
       const profile = await profileFor(ctx.user);
       const decision = await recordInfectionControlDecision({ actor: ctx.user.name || "Operator", role: profile?.dashboardRole, signal: input.signal, action: input.action, reason: input.reason, writeAudit: addAuditEntry });

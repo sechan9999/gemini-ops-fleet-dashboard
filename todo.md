@@ -92,3 +92,8 @@
 - [x] Add durable hospital IPC policy and alert-threshold settings with admin-only server enforcement.
 - [x] Add CSV exports for the open IPC task queue and completed audit records.
 - [x] Test, document, visually verify, and checkpoint the admin IPC upgrade.
+
+- [x] Add daily and weekly IPC task-queue operational trend charts.
+- [x] Add unsaved changes warnings and success feedback to the IPC policy editor.
+- [x] Add escalation-reason filters to the IPC task queue and export only filtered tasks.
+- [x] Test, document, visually verify, and checkpoint the IPC analytics and filtering upgrade.

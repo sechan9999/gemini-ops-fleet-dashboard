@@ -26,6 +26,15 @@ describe("infection-control overview", () => {
     await expect(recordInfectionControlDecision({ role: "medical_director", actor: "Dr. HK Chun", signal: "PPE cart readiness", action: "escalate", writeAudit: async () => undefined })).rejects.toThrow("reason is required");
   });
 
+  it("exposes reason-tagged tasks and both daily and weekly operational trends", () => {
+    const overview = getInfectionControlOverview();
+    expect(overview.tasks.every(task => task.reason)).toBe(true);
+    expect(overview.trends.source).toBe("synthetic_facility");
+    expect(overview.trends.daily).toHaveLength(7);
+    expect(overview.trends.weekly).toHaveLength(4);
+    expect(overview.trends.daily.every(point => point.openTasks >= 0 && point.completedTasks >= 0)).toBe(true);
+  });
+
   it("keeps autonomous declarations disabled and human approval required", () => {
     const overview = getInfectionControlOverview();
     expect(overview.safety.syntheticOnly).toBe(true);

@@ -196,3 +196,12 @@
 .notification-item-mark { display: grid; place-items: center; flex: 0 0 auto; width: 30px; height: 30px; color: var(--teal); background: var(--teal-soft); border-radius: 8px; }
 .notification-unread { padding: 3px 5px; color: var(--teal); background: var(--teal-soft); border-radius: 4px; font: 9px 'IBM Plex Mono', monospace; letter-spacing: .08em; }
 @media (max-width: 720px) { .notification-inbox { width: min(100vw - 16px, 520px); padding: 18px; } }
+
+
+.trend-toggle { padding: 6px 9px; border: 0; border-radius: 5px; color: #83908b; background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 10px; }
+.trend-toggle:hover { color: var(--teal); }
+.trend-toggle.active { color: var(--ink); background: var(--paper); box-shadow: 0 2px 5px rgba(29,41,40,.08); }
+.toggle-row { display: inline-flex; align-items: center; gap: 7px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px; color: #687572; background: #fbfaf6; font-size: 11px; }
+.toggle-row input { accent-color: var(--teal); }
+.admin-policy-card { margin-top: 18px; }
+@media (max-width: 520px) { .trend-toggle { padding-inline: 7px; } .toggle-row { width: 100%; } }

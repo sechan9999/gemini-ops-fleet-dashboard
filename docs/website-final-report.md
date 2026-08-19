@@ -55,3 +55,13 @@ The ward signals and hospital values are synthetic demonstration data. Credentia
 - `drizzle/schema.ts` — `ipcPolicies` and operational telemetry schema.
 - `docs/openapi.yaml` — API and export contracts.
 - `docs/devpost-description.md` — submission-ready project description.
+
+## Latest IPC Analytics and Workflow Enhancements
+
+The IPC command center now includes a dedicated protected trends procedure with daily and weekly synthetic-facility series. The charts compare open versus completed tasks and escalations versus dismissals, with an explicit synthetic-data label and a responsive Daily/Weekly selector.
+
+The hospital policy editor now tracks a saved baseline, displays an unsaved-changes status, offers a reset action, blocks navigation loss through a browser `beforeunload` warning, and shows success or failure toasts after threshold updates. Invalid critical-at-or-above-watch configurations remain blocked before submission.
+
+The IPC queue now carries structured escalation-reason labels, supports filtering by coverage gap, PPE readiness, environmental cleaning, and training gap, and exports only the currently filtered tasks. The CSV includes an `escalation_reason` column so downstream review retains the reason context.
+
+Validation for this increment passed with 20 Vitest tests, TypeScript, production build, desktop screenshots, and 390×844 mobile screenshots. The charts render with visible lines, the queue filter remains usable on the compact layout, and the policy form stays readable on mobile.
