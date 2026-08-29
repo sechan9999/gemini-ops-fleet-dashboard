@@ -22,6 +22,25 @@ jobs:
   verify:
     name: Test, typecheck, and build
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: mysql://gemini:gemini_ci_password@127.0.0.1:3306/gemini_ops_fleet
+      JWT_SECRET: ci-only-jwt-secret
+      NODE_ENV: test
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: gemini_ops_fleet
+          MYSQL_USER: gemini
+          MYSQL_PASSWORD: gemini_ci_password
+          MYSQL_ROOT_PASSWORD: root_ci_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -proot_ci_password --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,6 +58,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Apply database schema
+        run: pnpm exec drizzle-kit push --force
 
       - name: Run tests
         run: pnpm test

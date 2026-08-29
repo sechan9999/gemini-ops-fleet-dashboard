@@ -120,7 +120,7 @@ The dashboard is available at `http://localhost:3000`. Compose starts MySQL with
 
 ## CI/CD
 
-`.github/workflows/ci-cd.yml` runs on pull requests and pushes to `main`. The verification job installs with the pinned pnpm version, runs Vitest, typechecks, and builds the production bundle. A push to `main` then builds the Docker image and publishes immutable SHA and `latest` tags to GitHub Container Registry using the repository's `GITHUB_TOKEN`.
+`.github/workflows/ci-cd.yml` runs on pull requests and pushes to `main`. The verification job starts a MySQL 8.4 service, applies the Drizzle schema, installs with the pinned pnpm version, runs the full persistence-aware Vitest suite, typechecks, and builds the production bundle. A push to `main` then builds the Docker image and publishes immutable SHA and `latest` tags to GitHub Container Registry using the repository's `GITHUB_TOKEN`. See [`DEPLOYMENT.md`](DEPLOYMENT.md) for managed database setup, production environment variables, and permanent hosting publication steps. Use [`.env.example`](.env.example) as a safe local configuration template; never commit `.env` or real credentials.
 
 ## Testing and verification
 
